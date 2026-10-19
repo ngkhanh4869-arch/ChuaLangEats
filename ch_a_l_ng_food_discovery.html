@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ăn Gì Chùa Láng? - Campus Food & Vendor Finder</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Leaflet CSS for Map -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#fff1f2',
+                            100: '#ffe4e6',
+                            500: '#f43f5e',
+                            600: '#e11d48',
+                            700: '#be123c',
+                        },
+                        ftu: '#991b1b', // FTU Deep Red accent
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        #map { height: 320px; width: 100%; border-radius: 1rem; z-index: 1; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 8px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 8px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        .vendor-card:hover { transform: translateY(-3px); }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen flex flex-col">
+
+    <!-- HEADER / NAVIGATION -->
+    <header class="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <!-- Logo & Campus Tag -->
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-rose-500 to-amber-500 flex items-center justify-center text-white text-xl font-black shadow-md shadow-rose-200">
+                        <i class="fa-solid font-bold fa-utensils"></i>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h1 class="text-lg font-bold tracking-tight text-slate-900 leading-none">ChùaLáng<span class="text-rose-600">Eats</span></h1>
+                            <span class="bg-rose-100 text-rose-800 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">FTU • DAV • VYA</span>
+                        </div>
+                        <p class="text-xs text-slate-500 mt-0.5">Tìm quán ngon, rẻ, sạch quanh Chùa Láng</p>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex items-center gap-2 sm:gap-3">
+                    <button onclick="openReviewModal()" class="inline-flex items-center gap-2 bg-rose-600 hover:bg-rose-700 text-white text-xs sm:text-sm font-semibold px-3 sm:px-4 py-2 rounded-xl transition shadow-sm hover:shadow-rose-100">
+                        <i class="fa-solid fa-plus text-xs"></i>
+                        <span class="hidden sm:inline">Viết Đánh Giá</span>
+                        <span class="sm:hidden">Đánh giá</span>
+                    </button>
+                    <button onclick="toggleMapView()" id="mapToggleBtn" class="inline-flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs sm:text-sm font-semibold px-3 py-2 rounded-xl transition">
+                        <i class="fa-solid fa-map-location-dot text-rose-600"></i>
+                        <span class="hidden md:inline" id="mapToggleText">Xem Bản Đồ</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- HERO BANNER / SPECIAL DEALS CAROUSEL -->
+    <section class="bg-gradient-to-r from-rose-600 via-rose-500 to-amber-500 text-white py-6 shadow-inner">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col md:flex-row items-center justify-between gap-4">
+                <div class="space-y-1 text-center md:text-left">
+                    <div class="inline-flex items-center gap-1.5 bg-white/20 backdrop-blur-md px-2.5 py-0.5 rounded-full text-xs font-medium text-white mb-1">
+                        <i class="fa-solid fa-fire text-amber-300"></i>
+                        <span>Combo Sinh Viên Tiết Kiệm</span>
+                    </div>
+                    <h2 class="text-xl sm:text-2xl font-extrabold tracking-tight">Xua tan nỗi lo bị dẹp xe đẩy cổng trường FTU & DAV!</h2>
+                    <p class="text-rose-100 text-xs sm:text-sm max-w-xl">Khám phá các quán ăn ngon trong ngõ hẻm Chùa Láng — Đã được xác thực giá < 30k & chuẩn vệ sinh bởi FTUers.</p>
+                </div>
+                
+                <!-- Quick Hot Deals Widget -->
+                <div class="w-full md:w-auto flex items-center gap-2 overflow-x-auto pb-1 md:pb-0 custom-scrollbar">
+                    <div class="bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 p-3 rounded-xl min-w-[200px] text-xs transition cursor-pointer" onclick="filterByPreset('under20k')">
+                        <div class="font-bold text-amber-300 flex items-center gap-1">
+                            <i class="fa-solid fa-bolt"></i> Siêu Rẻ < 20K
+                        </div>
+                        <div class="text-white/90 font-medium text-[11px] mt-0.5">Bánh mì, Cơm nắm, Xôi ngõ 185</div>
+                    </div>
+                    <div class="bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 p-3 rounded-xl min-w-[200px] text-xs transition cursor-pointer" onclick="filterByPreset('cleanFirst')">
+                        <div class="font-bold text-emerald-300 flex items-center gap-1">
+                            <i class="fa-solid fa-shield-halved"></i> Chuẩn Vệ Sinh
+                        </div>
+                        <div class="text-white/90 font-medium text-[11px] mt-0.5">Rating Sạch Sẽ >= 4.5 Stars</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- MAIN CONTENT AREA -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-grow w-full">
+        
+        <!-- SEARCH & FILTER BAR -->
+        <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 mb-6 space-y-4">
+            <!-- Search input -->
+            <div class="relative">
+                <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3.5 text-slate-400 text-sm"></i>
+                <input type="text" id="searchInput" oninput="applyFilters()" placeholder="Tìm món ăn, tên quán hoặc ngõ (Ví dụ: Cơm tấm, Ngõ 121 Chùa Láng, Bún trộn...)" class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-rose-500 focus:bg-white transition">
+            </div>
+
+            <!-- Filter Controls -->
+            <div class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                <!-- Price Filter -->
+                <div>
+                    <label class="block font-semibold text-slate-600 mb-1"><i class="fa-solid fa-tag text-rose-500 mr-1"></i>Mức Giá Max</label>
+                    <select id="priceFilter" onchange="applyFilters()" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-rose-500">
+                        <option value="all">Tất cả mức giá</option>
+                        <option value="20">Dưới 20.000 VNĐ</option>
+                        <option value="25">Dưới 25.000 VNĐ</option>
+                        <option value="30">Dưới 30.000 VNĐ (Chuẩn SV)</option>
+                    </select>
+                </div>
+
+                <!-- Distance / Walking Time -->
+                <div>
+                    <label class="block font-semibold text-slate-600 mb-1"><i class="fa-solid fa-person-walking text-rose-500 mr-1"></i>Khoảng cách từ Cổng FTU/DAV</label>
+                    <select id="distanceFilter" onchange="applyFilters()" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-rose-500">
+                        <option value="all">Mọi khoảng cách</option>
+                        <option value="3">< 3 phút đi bộ (< 250m)</option>
+                        <option value="5">< 5 phút đi bộ (< 400m)</option>
+                        <option value="10">< 10 phút đi bộ</option>
+                    </select>
+                </div>
+
+                <!-- Hygiene Rating Filter -->
+                <div>
+                    <label class="block font-semibold text-slate-600 mb-1"><i class="fa-solid fa-pump-soap text-rose-500 mr-1"></i>Đánh giá Sạch Sẽ</label>
+                    <select id="hygieneFilter" onchange="applyFilters()" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-rose-500">
+                        <option value="all">Tất cả điểm vệ sinh</option>
+                        <option value="4.5">Xuất sắc (>= 4.5/5★)</option>
+                        <option value="4.0">Sạch tốt (>= 4.0/5★)</option>
+                    </select>
+                </div>
+
+                <!-- Meal Type / Time -->
+                <div>
+                    <label class="block font-semibold text-slate-600 mb-1"><i class="fa-solid fa-clock text-rose-500 mr-1"></i>Bữa Ăn</label>
+                    <select id="mealFilter" onchange="applyFilters()" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-rose-500">
+                        <option value="all">Tất cả thời gian</option>
+                        <option value="breakfast">Ăn sáng nhanh (6h - 9h)</option>
+                        <option value="lunch">Ăn trưa (11h - 13h30)</option>
+                        <option value="snack">Ăn vặt / Chiều</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- COLLAPSIBLE MAP SECTION -->
+        <div id="mapContainer" class="hidden mb-6 bg-white p-3 rounded-2xl shadow-sm border border-slate-200 transition-all">
+            <div class="flex items-center justify-between mb-2 px-1">
+                <span class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                    <i class="fa-solid fa-map-pin text-rose-500"></i> Bản đồ khu vực Chùa Láng (FTU / DAV / VYA)
+                </span>
+                <span class="text-[11px] text-slate-500">Nhấp vào ghim để xem thông tin quán</span>
+            </div>
+            <div id="map"></div>
+        </div>
+
+        <!-- RESULTS STATS & SORTING -->
+        <div class="flex items-center justify-between mb-4 px-1">
+            <div class="text-xs font-semibold text-slate-600">
+                Tìm thấy <span id="vendorCount" class="text-rose-600 font-bold">0</span> quán ăn phù hợp
+            </div>
+            <div class="flex items-center gap-2 text-xs">
+                <span class="text-slate-500">Sắp xếp:</span>
+                <select id="sortBy" onchange="applyFilters()" class="bg-white border border-slate-200 rounded-lg px-2 py-1 font-medium text-slate-700 focus:outline-none">
+                    <option value="rating">Đánh giá cao nhất</option>
+                    <option value="priceAsc">Giá thấp đến cao</option>
+                    <option value="hygiene">Độ sạch sẽ cao nhất</option>
+                    <option value="distance">Gần trường nhất</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- VENDOR CARDS GRID -->
+        <div id="vendorGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            <!-- Dynamic Vendor Cards Insertion -->
+        </div>
+
+        <!-- EMPTY STATE -->
+        <div id="emptyState" class="hidden text-center py-12 bg-white rounded-2xl border border-slate-200">
+            <i class="fa-solid fa-bowl-rice text-4xl text-slate-300 mb-3"></i>
+            <h3 class="text-base font-bold text-slate-700">Không tìm thấy quán phù hợp</h3>
+            <p class="text-xs text-slate-500 mt-1 max-w-md mx-auto">Thử nới lỏng bộ lọc mức giá hoặc xóa từ khóa tìm kiếm để xem thêm gợi ý nhé!</p>
+            <button onclick="resetFilters()" class="mt-4 text-xs font-bold text-rose-600 hover:text-rose-700 bg-rose-50 px-4 py-2 rounded-xl border border-rose-200">Đặt lại bộ lọc</button>
+        </div>
+
+    </main>
+
+    <!-- REVIEW MODAL -->
+    <div id="reviewModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-100 flex flex-col">
+            <!-- Modal Header -->
+            <div class="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white z-10">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-lg bg-rose-100 text-rose-600 flex items-center justify-center font-bold text-sm">
+                        <i class="fa-solid fa-pen-to-square"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-slate-900 text-sm sm:text-base leading-tight">Đóng góp đánh giá quán ăn</h3>
+                        <p class="text-[11px] text-slate-500">Giúp đồng môn Chùa Láng tìm quán ngon rẻ sạch!</p>
+                    </div>
+                </div>
+                <button onclick="closeReviewModal()" class="text-slate-400 hover:text-slate-600 w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center text-sm">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Modal Form Body -->
+            <form id="reviewForm" onsubmit="handleReviewSubmit(event)" class="p-4 sm:p-5 space-y-4 text-xs">
+                <!-- Select Vendor -->
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Chọn Quán Ăn *</label>
+                    <select id="reviewVendorSelect" required class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 font-medium text-slate-800 focus:ring-2 focus:ring-rose-500 focus:outline-none">
+                        <!-- Populated by JS -->
+                    </select>
+                </div>
+
+                <!-- Rating Scales Grid -->
+                <div class="grid grid-cols-2 gap-3 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Chất Lượng & Món Ăn</label>
+                        <div class="flex items-center gap-1 text-amber-400 text-base cursor-pointer" id="starRatingQuality">
+                            <i class="fa-solid fa-star" onclick="setRating('quality', 1)"></i>
+                            <i class="fa-solid fa-star" onclick="setRating('quality', 2)"></i>
+                            <i class="fa-solid fa-star" onclick="setRating('quality', 3)"></i>
+                            <i class="fa-solid fa-star" onclick="setRating('quality', 4)"></i>
+                            <i class="fa-solid fa-star" onclick="setRating('quality', 5)"></i>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Độ Sạch Sẽ & Vệ Sinh</label>
+                        <div class="flex items-center gap-1 text-emerald-500 text-base cursor-pointer" id="starRatingHygiene">
+                            <i class="fa-solid fa-shield-halved" onclick="setRating('hygiene', 1)"></i>
+                            <i class="fa-solid fa-shield-halved" onclick="setRating('hygiene', 2)"></i>
+                            <i class="fa-solid fa-shield-halved" onclick="setRating('hygiene', 3)"></i>
+                            <i class="fa-solid fa-shield-halved" onclick="setRating('hygiene', 4)"></i>
+                            <i class="fa-solid fa-shield-halved" onclick="setRating('hygiene', 5)"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Actual Price Paid -->
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Giá thực tế bạn đã trả (VNĐ) *</label>
+                    <input type="number" id="reviewPrice" required placeholder="Ví dụ: 25000" min="5000" max="200000" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 font-medium text-slate-800 focus:ring-2 focus:ring-rose-500 focus:outline-none">
+                </div>
+
+                <!-- Review Comment -->
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Nhận xét chi tiết (Khuyên dùng thử món gì? Thái độ phục vụ?)</label>
+                    <textarea id="reviewComment" rows="3" placeholder="Ví dụ: Bún trộn ở đây đầy đặn, cô chủ vui tính, ngõ hơi hẹp tý nhưng sạch sẽ..." class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 font-medium text-slate-800 focus:ring-2 focus:ring-rose-500 focus:outline-none"></textarea>
+                </div>
+
+                <!-- Student Verification Badge Simulation -->
+                <div class="bg-rose-50/60 p-3 rounded-xl border border-rose-100 space-y-2">
+                    <div class="flex items-center gap-1.5 font-bold text-rose-800">
+                        <i class="fa-solid fa-user-check text-rose-600"></i>
+                        <span>Xác thực Badge Sinh Viên (Để tăng uy tín)</span>
+                    </div>
+                    <input type="email" id="studentEmail" placeholder="Email trường (ví dụ: sv@ftu.edu.vn hoặc @dav.edu.vn)" class="w-full bg-white border border-rose-200 rounded-lg p-2 text-slate-800 focus:ring-2 focus:ring-rose-500 focus:outline-none">
+                    <p class="text-[10px] text-rose-600">Hệ thống sẽ gắn Huy hiệu [FTUer Verified] hoặc [DAVer Verified] bên cạnh đánh giá của bạn.</p>
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit" class="w-full bg-rose-600 hover:bg-rose-700 text-white font-bold py-3 rounded-xl text-xs sm:text-sm shadow-md transition">
+                    Gửi Đánh Giá Ngay
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- DETAIL / REVIEWS MODAL -->
+    <div id="detailModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-100 flex flex-col">
+            <!-- Dynamic Content Loaded by JS -->
+            <div id="detailModalContent"></div>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="bg-slate-900 text-slate-400 text-xs py-8 border-t border-slate-800 mt-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4">
+            <div class="flex flex-col md:flex-row items-center justify-between gap-4">
+                <div class="flex items-center gap-2">
+                    <div class="w-7 h-7 rounded-lg bg-rose-600 text-white flex items-center justify-center font-bold">
+                        <i class="fa-solid fa-utensils text-xs"></i>
+                    </div>
+                    <span class="font-bold text-white text-sm">Chùa Láng Eats</span>
+                </div>
+                <p class="text-center md:text-right text-slate-400">
+                    Dự án sinh viên nghiên cứu Đổi mới Sáng tạo & Tư duy Thiết kế (Design Thinking) • FTU Hanoi 2026
+                </p>
+            </div>
+            <div class="border-t border-slate-800 pt-4 flex flex-col sm:flex-row justify-between items-center text-[11px] text-slate-500 gap-2">
+                <p>© 2026 Chùa Láng Student Community. Cập nhật dữ liệu trực tiếp bởi sinh viên FTU, DAV, VYA.</p>
+                <div class="flex gap-4">
+                    <a href="#" class="hover:text-slate-300">Tiêu chuẩn Sạch Sẽ</a>
+                    <a href="#" class="hover:text-slate-300">Gửi quán mới</a>
+                    <a href="#" class="hover:text-slate-300">Điều khoản sử dụng</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Leaflet JS for Map -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- MAIN JAVASCRIPT APP LOGIC -->
+    <script>
+        // MOCK VENDOR DATASET FOR CHUA LANG AREA
+        const initialVendors = [
+            {
+                id: 1,
+                name: "Bánh Mì & Cơm Nắm Chị Lan",
+                category: "Ăn Sáng Nhanh",
+                mealType: "breakfast",
+                price: 15000,
+                priceText: "15.000 - 20.000 VNĐ",
+                address: "Ngõ 185 Chùa Láng (Cách cổng FTU 150m)",
+                distanceMinutes: 2,
+                lat: 21.0225,
+                lng: 105.8028,
+                hygieneScore: 4.8,
+                overallRating: 4.7,
+                reviewCount: 38,
+                image: "https://images.unsplash.com/photo-1509722747041-616f39b57569?auto=format&fit=crop&w=600&q=80",
+                tags: ["Rẻ Nhất", "Sáng Nhanh", "Sạch Sẽ"],
+                description: "Chuyên bánh mì trứng ốp nóng hổi và cơm nắm muối vừng/ruốc tự làm từ 5h30 sáng. Cực phù hợp cho SV FTU học kíp 1.",
+                reviews: [
+                    { user: "Minh Trang (FTU K61)", badge: "FTUer Verified", rating: 5, hygiene: 5, comment: "Trứng ốp vắt chanh ngon đỉnh. Rẻ mà cô làm sạch sẽ đeo găng tay đầy đủ!", pricePaid: "15.000 VNĐ" },
+                    { user: "Hoàng Nam (DAV K50)", badge: "DAVer Verified", rating: 4.5, hygiene: 4.5, comment: "Cơm nắm ruốc ngon, mua xong chạy vào lớp kịp giờ luôn.", pricePaid: "15.000 VNĐ" }
+                ]
+            },
+            {
+                id: 2,
+                name: "Cơm Tấm Ngõ 121 Chùa Láng",
+                category: "Ăn Trưa",
+                mealType: "lunch",
+                price: 25000,
+                priceText: "25.000 - 30.000 VNĐ",
+                address: "Số 12 Ngõ 121 Chùa Láng",
+                distanceMinutes: 4,
+                lat: 21.0218,
+                lng: 105.8035,
+                hygieneScore: 4.5,
+                overallRating: 4.8,
+                reviewCount: 64,
+                image: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=80",
+                tags: ["Cơm Trưa SV", "Đầy Đặn", "Trà Đá Miễn Phí"],
+                description: "Suất cơm sườn chả đặn dặn 25k, nước canh chan thoải mái, trà đá xin tự do. Không gian thoáng rộng.",
+                reviews: [
+                    { user: "Khánh Linh (FTU K62)", badge: "FTUer Verified", rating: 5, hygiene: 4.5, comment: "Suất 25k mà sườn to đùng. Ăn no căng tới chiều học kíp 3 luôn.", pricePaid: "25.000 VNĐ" }
+                ]
+            },
+            {
+                id: 3,
+                name: "Bún Trộn Nam Bộ & Bún Cua Ngõ 84",
+                category: "Ăn Trưa / Tối",
+                mealType: "lunch",
+                price: 28000,
+                priceText: "25.000 - 30.000 VNĐ",
+                address: "Ngõ 84 Chùa Láng (Gần ĐH Ngoại Giao)",
+                distanceMinutes: 3,
+                lat: 21.0231,
+                lng: 105.8042,
+                hygieneScore: 4.2,
+                overallRating: 4.6,
+                reviewCount: 42,
+                image: "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&fit=crop&w=600&q=80",
+                tags: ["Gần DAV", "Bún Trộn", "Bát Đầy"],
+                description: "Quán bún chua ngọt thanh mát, rau sống rửa sạch nhiều lần, măng muối giòn. Phù hợp ăn trưa đổi vị.",
+                reviews: [
+                    { user: "Đức Anh (VYA)", badge: "VYAer Verified", rating: 4.5, hygiene: 4, comment: "Nước trộn bún ngon vừa miệng, quán hơi nhỏ nhưng dọn bàn nhanh.", pricePaid: "28.000 VNĐ" }
+                ]
+            },
+            {
+                id: 4,
+                name: "Bún Đậu Mắm Tôm Ngõ 91",
+                category: "Ăn Trưa / Chiều",
+                mealType: "lunch",
+                price: 25000,
+                priceText: "20.000 - 30.000 VNĐ",
+                address: "Số 5 Ngõ 91 Chùa Láng",
+                distanceMinutes: 5,
+                lat: 21.0210,
+                lng: 105.8020,
+                hygieneScore: 4.6,
+                overallRating: 4.5,
+                reviewCount: 51,
+                image: "https://images.unsplash.com/photo-1555126634-323283e090fa?auto=format&fit=crop&w=600&q=80",
+                tags: ["Bún Đậu", "Rán Nóng", "Sạch Sẽ"],
+                description: "Đậu rán lướt giòn tan, dừa nạo giòn tươi. Khay tre lót lá chuối sạch sẽ không dầu mỡ đọng.",
+                reviews: [
+                    { user: "Hà Phương (FTU K60)", badge: "FTUer Verified", rating: 4.5, hygiene: 5, comment: "Mắm tôm pha ngon, có kẹo gum thơm miệng sau khi ăn rất tinh tế!", pricePaid: "25.000 VNĐ" }
+                ]
+            },
+            {
+                id: 5,
+                name: "Xôi Nóng & Bánh Bao Cụ Già Chùa Láng",
+                category: "Ăn Sáng Nhanh",
+                mealType: "breakfast",
+                price: 12000,
+                priceText: "10.000 - 15.000 VNĐ",
+                address: "Góc Ngõ 157 Chùa Láng",
+                distanceMinutes: 3,
+                lat: 21.0220,
+                lng: 105.8015,
+                hygieneScore: 4.7,
+                overallRating: 4.9,
+                reviewCount: 89,
+                image: "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=600&q=80",
+                tags: ["Siêu Rẻ", "Xôi Xéo", "An Tâm"],
+                description: "Góc xôi nhỏ gia truyền hơn 10 năm. Xôi xéo hành phi tự làm giòn rụm, gói lá dong giữ nhiệt lâu.",
+                reviews: [
+                    { user: "Tuấn Kiệt (FTU K63)", badge: "FTUer Verified", rating: 5, hygiene: 5, comment: "Xôi 12k mà no tới trưa. Cụ bọc gói cẩn thận, hạt xôi dẻo quánh.", pricePaid: "12.000 VNĐ" }
+                ]
+            },
+            {
+                id: 6,
+                name: "Bánh Tráng Trộn & Ăn Vặt Ngõ Bách Khoa thu nhỏ",
+                category: "Ăn Vặt Chiều",
+                mealType: "snack",
+                price: 20000,
+                priceText: "15.000 - 25.000 VNĐ",
+                address: "Sân tập thể Ngõ 119 Chùa Láng",
+                distanceMinutes: 6,
+                lat: 21.0205,
+                lng: 105.8030,
+                hygieneScore: 4.3,
+                overallRating: 4.4,
+                reviewCount: 29,
+                image: "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&w=600&q=80",
+                tags: ["Ăn Vặt", "Trà Tắc 10k", "Sinh Viên"],
+                description: "Tụ điểm ăn vặt chill sau giờ học kíp 4. Bánh tráng nướng, cuộn bơ, trà tắc khổng lồ 10k.",
+                reviews: [
+                    { user: "Yến Nhi (DAV)", badge: "DAVer Verified", rating: 4, hygiene: 4.3, comment: "Trà tắc 10k ngon mát, chỗ ngồi thoáng mát nhiều cây xanh.", pricePaid: "20.000 VNĐ" }
+                ]
+            }
+        ];
+
+        // STATE VARIABLES
+        let vendors = [...initialVendors];
+        let map = null;
+        let markers = [];
+        let isMapViewOpen = false;
+        let currentRatings = { quality: 5, hygiene: 5 };
+
+        // INITIALIZATION ON PAGE LOAD
+        window.onload = function() {
+            renderVendorGrid(vendors);
+            populateVendorSelectModal();
+        };
+
+        // RENDER VENDOR GRID
+        function renderVendorGrid(items) {
+            const grid = document.getElementById("vendorGrid");
+            const empty = document.getElementById("emptyState");
+            const countEl = document.getElementById("vendorCount");
+
+            countEl.innerText = items.length;
+
+            if (items.length === 0) {
+                grid.innerHTML = "";
+                empty.classList.remove("hidden");
+                return;
+            }
+
+            empty.classList.add("hidden");
+            grid.innerHTML = items.map(vendor => `
+                <div class="vendor-card bg-white rounded-2xl overflow-hidden border border-slate-200 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
+                    <div>
+                        <!-- Card Image Header -->
+                        <div class="relative h-44 w-full bg-slate-100 overflow-hidden">
+                            <img src="${vendor.image}" alt="${vendor.name}" class="w-full h-full object-cover" onerror="this.src='https://placehold.co/600x400/fff1f2/be123c?text=Chua+Lang+Food'">
+                            
+                            <!-- Price Badge -->
+                            <div class="absolute top-3 left-3 bg-slate-900/80 backdrop-blur-md text-white text-[11px] font-bold px-2.5 py-1 rounded-lg">
+                                <i class="fa-solid fa-tag text-rose-400 mr-1"></i>${vendor.priceText}
+                            </div>
+
+                            <!-- Distance Badge -->
+                            <div class="absolute top-3 right-3 bg-white/90 backdrop-blur-md text-slate-800 text-[11px] font-bold px-2 py-1 rounded-lg flex items-center gap-1 shadow-sm">
+                                <i class="fa-solid fa-person-walking text-rose-600"></i>${vendor.distanceMinutes} phút đi bộ
+                            </div>
+
+                            <!-- Hygiene Shield Badge -->
+                            <div class="absolute bottom-3 left-3 bg-emerald-600/90 text-white text-[10px] font-bold px-2 py-0.5 rounded-md flex items-center gap-1 backdrop-blur-sm">
+                                <i class="fa-solid fa-shield-halved"></i>Sạch Sẽ: ${vendor.hygieneScore}/5.0
+                            </div>
+                        </div>
+
+                        <!-- Card Body -->
+                        <div class="p-4 space-y-2">
+                            <div class="flex items-start justify-between gap-2">
+                                <h3 class="font-bold text-slate-900 text-sm leading-snug hover:text-rose-600 cursor-pointer" onclick="openDetailModal(${vendor.id})">${vendor.name}</h3>
+                                <div class="flex items-center text-amber-500 font-bold text-xs shrink-0">
+                                    <i class="fa-solid fa-star text-xs mr-0.5"></i>${vendor.overallRating}
+                                    <span class="text-slate-400 font-normal text-[10px] ml-0.5">(${vendor.reviewCount})</span>
+                                </div>
+                            </div>
+
+                            <p class="text-[11px] text-slate-500 flex items-center gap-1 truncate">
+                                <i class="fa-solid fa-location-dot text-rose-500 text-xs shrink-0"></i>${vendor.address}
+                            </p>
+
+                            <p class="text-xs text-slate-600 line-clamp-2 leading-relaxed pt-1">
+                                ${vendor.description}
+                            </p>
+
+                            <!-- Tags -->
+                            <div class="flex flex-wrap gap-1 pt-2">
+                                ${vendor.tags.map(tag => `<span class="bg-slate-100 text-slate-600 text-[10px] font-semibold px-2 py-0.5 rounded-md">${tag}</span>`).join('')}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Card Footer Actions -->
+                    <div class="px-4 py-3 bg-slate-50/80 border-t border-slate-100 flex items-center justify-between text-xs mt-2">
+                        <span class="text-[11px] font-medium text-slate-500">${vendor.category}</span>
+                        <button onclick="openDetailModal(${vendor.id})" class="font-bold text-rose-600 hover:text-rose-700 flex items-center gap-1 text-xs">
+                            Chi tiết & Đánh giá <i class="fa-solid fa-chevron-right text-[10px]"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // FILTER & SORT LOGIC
+        function applyFilters() {
+            const query = document.getElementById("searchInput").value.toLowerCase().trim();
+            const maxPrice = document.getElementById("priceFilter").value;
+            const maxDistance = document.getElementById("distanceFilter").value;
+            const minHygiene = document.getElementById("hygieneFilter").value;
+            const mealType = document.getElementById("mealFilter").value;
+            const sortBy = document.getElementById("sortBy").value;
+
+            let filtered = vendors.filter(v => {
+                // Search query
+                const matchQuery = v.name.toLowerCase().includes(query) || 
+                                   v.address.toLowerCase().includes(query) || 
+                                   v.description.toLowerCase().includes(query) ||
+                                   v.tags.some(t => t.toLowerCase().includes(query));
+
+                // Price filter
+                const matchPrice = maxPrice === "all" || v.price <= parseInt(maxPrice) * 1000;
+
+                // Distance filter
+                const matchDistance = maxDistance === "all" || v.distanceMinutes <= parseInt(maxDistance);
+
+                // Hygiene filter
+                const matchHygiene = minHygiene === "all" || v.hygieneScore >= parseFloat(minHygiene);
+
+                // Meal type filter
+                const matchMeal = mealFilter.value === "all" || v.mealType === mealType;
+
+                return matchQuery && matchPrice && matchDistance && matchHygiene && matchMeal;
+            });
+
+            // Sorting logic
+            if (sortBy === "rating") {
+                filtered.sort((a, b) => b.overallRating - a.overallRating);
+            } else if (sortBy === "priceAsc") {
+                filtered.sort((a, b) => a.price - b.price);
+            } else if (sortBy === "hygiene") {
+                filtered.sort((a, b) => b.hygieneScore - a.hygieneScore);
+            } else if (sortBy === "distance") {
+                filtered.sort((a, b) => a.distanceMinutes - b.distanceMinutes);
+            }
+
+            renderVendorGrid(filtered);
+
+            if (isMapViewOpen && map) {
+                updateMapMarkers(filtered);
+            }
+        }
+
+        // PRESET QUICK FILTERS
+        function filterByPreset(type) {
+            document.getElementById("priceFilter").value = "all";
+            document.getElementById("distanceFilter").value = "all";
+            document.getElementById("hygieneFilter").value = "all";
+            document.getElementById("mealFilter").value = "all";
+
+            if (type === 'under20k') {
+                document.getElementById("priceFilter").value = "20";
+            } else if (type === 'cleanFirst') {
+                document.getElementById("hygieneFilter").value = "4.5";
+            }
+            applyFilters();
+        }
+
+        function resetFilters() {
+            document.getElementById("searchInput").value = "";
+            document.getElementById("priceFilter").value = "all";
+            document.getElementById("distanceFilter").value = "all";
+            document.getElementById("hygieneFilter").value = "all";
+            document.getElementById("mealFilter").value = "all";
+            document.getElementById("sortBy").value = "rating";
+            applyFilters();
+        }
+
+        // MAP TOGGLE & LEAFLET INTEGRATION
+        function toggleMapView() {
+            const mapContainer = document.getElementById("mapContainer");
+            const btnText = document.getElementById("mapToggleText");
+            isMapViewOpen = !isMapViewOpen;
+
+            if (isMapViewOpen) {
+                mapContainer.classList.remove("hidden");
+                btnText.innerText = "Ẩn Bản Đồ";
+                
+                if (!map) {
+                    initMap();
+                } else {
+                    setTimeout(() => map.invalidateSize(), 200);
+                }
+            } else {
+                mapContainer.classList.add("hidden");
+                btnText.innerText = "Xem Bản Đồ";
+            }
+        }
+
+        function initMap() {
+            // Centered near FTU Hanoi / Chua Lang area
+            map = L.map('map').setView([21.0222, 105.8028], 16);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '© OpenStreetMap'
+            }).addTo(map);
+
+            updateMapMarkers(vendors);
+        }
+
+        function updateMapMarkers(items) {
+            markers.forEach(m => map.removeLayer(m));
+            markers = [];
+
+            items.forEach(v => {
+                const marker = L.marker([v.lat, v.lng]).addTo(map);
+                marker.bindPopup(`
+                    <div class="text-xs p-1 font-sans">
+                        <strong class="text-rose-600 block text-sm">${v.name}</strong>
+                        <div class="text-slate-600 font-bold">${v.priceText}</div>
+                        <div class="text-slate-500 mt-1">${v.address}</div>
+                        <button onclick="openDetailModal(${v.id})" class="mt-2 bg-rose-600 text-white font-bold px-2 py-1 rounded text-[10px] w-full">Xem đánh giá</button>
+                    </div>
+                `);
+                markers.push(marker);
+            });
+        }
+
+        // MODAL HANDLERS
+        function populateVendorSelectModal() {
+            const select = document.getElementById("reviewVendorSelect");
+            select.innerHTML = vendors.map(v => `<option value="${v.id}">${v.name} (${v.priceText})</option>`).join('');
+        }
+
+        function openReviewModal(vendorId) {
+            populateVendorSelectModal();
+            if (vendorId) {
+                document.getElementById("reviewVendorSelect").value = vendorId;
+            }
+            document.getElementById("reviewModal").classList.remove("hidden");
+        }
+
+        function closeReviewModal() {
+            document.getElementById("reviewModal").classList.add("hidden");
+        }
+
+        function setRating(type, val) {
+            currentRatings[type] = val;
+            const containerId = type === 'quality' ? 'starRatingQuality' : 'starRatingHygiene';
+            const iconClass = type === 'quality' ? 'fa-star' : 'fa-shield-halved';
+            const container = document.getElementById(containerId);
+            const stars = container.querySelectorAll("i");
+
+            stars.forEach((star, index) => {
+                if (index < val) {
+                    star.className = `fa-solid ${iconClass}`;
+                } else {
+                    star.className = `fa-regular ${iconClass} text-slate-300`;
+                }
+            });
+        }
+
+        function handleReviewSubmit(e) {
+            e.preventDefault();
+            const vendorId = parseInt(document.getElementById("reviewVendorSelect").value);
+            const pricePaid = document.getElementById("reviewPrice").value;
+            const comment = document.getElementById("reviewComment").value;
+            const email = document.getElementById("studentEmail").value;
+
+            // Determine verification badge
+            let badge = "Sinh Viên Verified";
+            if (email.toLowerCase().includes("@ftu.edu.vn")) badge = "FTUer Verified";
+            else if (email.toLowerCase().includes("@dav.edu.vn")) badge = "DAVer Verified";
+            else if (email.toLowerCase().includes("@vya.edu.vn")) badge = "VYAer Verified";
+
+            const targetVendor = vendors.find(v => v.id === vendorId);
+            if (targetVendor) {
+                targetVendor.reviews.unshift({
+                    user: email ? email.split('@')[0] : "Sinh viên ẩn danh",
+                    badge: badge,
+                    rating: currentRatings.quality,
+                    hygiene: currentRatings.hygiene,
+                    comment: comment || "Quán ngon, giá đúng tiêu chuẩn sinh viên!",
+                    pricePaid: `${parseInt(pricePaid).toLocaleString('vi-VN')} VNĐ`
+                });
+
+                targetVendor.reviewCount += 1;
+                alert("Cảm ơn bạn! Đánh giá đã được xác thực và cập nhật lên hệ thống.");
+                closeReviewModal();
+                applyFilters();
+            }
+        }
+
+        // DETAIL MODAL LOGIC
+        function openDetailModal(vendorId) {
+            const v = vendors.find(item => item.id === vendorId);
+            if (!v) return;
+
+            const modalContent = document.getElementById("detailModalContent");
+            modalContent.innerHTML = `
+                <!-- Modal Header Image -->
+                <div class="relative h-56 sm:h-64 w-full bg-slate-900">
+                    <img src="${v.image}" class="w-full h-full object-cover opacity-90" onerror="this.src='https://placehold.co/600x400/fff1f2/be123c?text=Chua+Lang+Food'">
+                    <button onclick="closeDetailModal()" class="absolute top-4 right-4 bg-slate-900/60 hover:bg-slate-900 text-white w-9 h-9 rounded-full flex items-center justify-center text-sm backdrop-blur-sm transition">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                    <div class="absolute bottom-4 left-4 right-4 text-white">
+                        <span class="bg-rose-600 text-[10px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wider">${v.category}</span>
+                        <h2 class="text-xl sm:text-2xl font-black mt-1 leading-tight">${v.name}</h2>
+                        <p class="text-xs text-slate-200 flex items-center gap-1 mt-0.5">
+                            <i class="fa-solid fa-location-dot text-rose-400"></i>${v.address}
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Modal Body -->
+                <div class="p-5 space-y-5 text-xs">
+                    <!-- Key Metric Badges -->
+                    <div class="grid grid-cols-3 gap-2 bg-slate-50 p-3 rounded-xl border border-slate-200 text-center">
+                        <div>
+                            <div class="text-slate-400 font-semibold text-[10px]">Mức Giá Khảo Sát</div>
+                            <div class="font-bold text-rose-600 text-xs sm:text-sm mt-0.5">${v.priceText}</div>
+                        </div>
+                        <div class="border-x border-slate-200">
+                            <div class="text-slate-400 font-semibold text-[10px]">Điểm Vệ Sinh</div>
+                            <div class="font-bold text-emerald-600 text-xs sm:text-sm mt-0.5 flex items-center justify-center gap-1">
+                                <i class="fa-solid fa-shield-halved"></i>${v.hygieneScore}/5.0
+                            </div>
+                        </div>
+                        <div>
+                            <div class="text-slate-400 font-semibold text-[10px]">Khoảng Cách</div>
+                            <div class="font-bold text-slate-800 text-xs sm:text-sm mt-0.5 flex items-center justify-center gap-1">
+                                <i class="fa-solid fa-person-walking text-rose-500"></i>${v.distanceMinutes} phút
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Description -->
+                    <div>
+                        <h4 class="font-bold text-slate-800 text-sm mb-1">Mô tả & Đặc trưng</h4>
+                        <p class="text-slate-600 leading-relaxed">${v.description}</p>
+                    </div>
+
+                    <!-- Reviews Section -->
+                    <div class="space-y-3 pt-2">
+                        <div class="flex items-center justify-between border-b border-slate-200 pb-2">
+                            <h4 class="font-bold text-slate-900 text-sm">Đánh giá từ Sinh Viên (${v.reviews.length})</h4>
+                            <button onclick="closeDetailModal(); openReviewModal(${v.id})" class="text-rose-600 font-bold hover:underline">
+                                + Viết nhận xét
+                            </button>
+                        </div>
+
+                        <div class="space-y-3 max-h-60 overflow-y-auto custom-scrollbar pr-1">
+                            ${v.reviews.map(r => `
+                                <div class="bg-slate-50 p-3 rounded-xl border border-slate-100 space-y-1">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center gap-1.5">
+                                            <span class="font-bold text-slate-800">${r.user}</span>
+                                            <span class="bg-rose-100 text-rose-800 text-[9px] font-bold px-1.5 py-0.5 rounded">${r.badge}</span>
+                                        </div>
+                                        <span class="text-amber-500 font-bold">${r.rating} ★</span>
+                                    </div>
+                                    <p class="text-slate-600">${r.comment}</p>
+                                    <div class="text-[10px] text-slate-400 flex items-center gap-2 pt-1">
+                                        <span>Giá thực tế: <strong class="text-slate-600">${r.pricePaid}</strong></span>
+                                        <span>•</span>
+                                        <span>Sạch sẽ: <strong class="text-emerald-600">${r.hygiene}/5 ★</strong></span>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modal Footer -->
+                <div class="p-4 bg-slate-50 border-t border-slate-100 flex justify-end">
+                    <button onclick="closeDetailModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold px-4 py-2 rounded-xl">
+                        Đóng
+                    </button>
+                </div>
+            `;
+
+            document.getElementById("detailModal").classList.remove("hidden");
+        }
+
+        function closeDetailModal() {
+            document.getElementById("detailModal").classList.add("hidden");
+        }
+    </script>
+</body>
+</html>
