@@ -95,10 +95,9 @@
         <p>© 2026 Chùa Láng Student Community</p>
     </footer>
 
-    <script type="module">
-        import { signInUser, signUpUser } from './js/supabase.js';
-
-        window.switchTab = function(type) {
+    <!-- GLOBAL TAB SWITCHER SCRIPT -->
+    <script>
+        function switchTab(type) {
             const loginForm = document.getElementById("formLogin");
             const signupForm = document.getElementById("formSignup");
             const tabLogin = document.getElementById("tabLogin");
@@ -115,7 +114,12 @@
                 tabSignup.className = "flex-1 py-2 font-bold text-sm text-palette-matcha border-b-2 border-palette-matcha transition";
                 tabLogin.className = "flex-1 py-2 font-bold text-sm text-palette-matcha/50 hover:text-palette-matcha transition";
             }
-        };
+        }
+    </script>
+
+    <!-- AUTH HELPER MODULE -->
+    <script type="module">
+        import { signInUser, signUpUser } from './js/supabase.js';
 
         window.handleLogin = async function(e) {
             e.preventDefault();
