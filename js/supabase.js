@@ -1,11 +1,13 @@
-// Initialize Supabase Client
+// Initialize Supabase Client via ESM import
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
 const SUPABASE_URL = 'https://qdyxijdscpkezdtpttlo.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFkeXhpamRzY3BrZXpkdHB0dGxvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI0ODQyNzcsImV4cCI6MjEwODA2MDI3N30.teYtRKzI8WlMc6kxOvKK37BdYguKf578fwh_7nmsVVE';
 
-const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+export const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // Helper Functions
-async function getCurrentUser() {
+export async function getCurrentUser() {
   const { data: { user } } = await supabaseClient.auth.getUser();
   if (!user) return null;
   
@@ -18,7 +20,7 @@ async function getCurrentUser() {
   return { ...user, profile };
 }
 
-async function signUpUser(username, password, badge) {
+export async function signUpUser(username, password, badge) {
   const syntheticEmail = `${username.toLowerCase().trim()}@chualangeats.user`;
   
   const { data, error } = await supabaseClient.auth.signUp({
@@ -32,27 +34,25 @@ async function signUpUser(username, password, badge) {
     }
   });
   
-  if (error) throw error;
-  return data;
+  return { data, error };
 }
 
-async function signInUser(username, password) {
+export async function signInUser(username, password) {
   const syntheticEmail = `${username.toLowerCase().trim()}@chualangeats.user`;
   const { data, error } = await supabaseClient.auth.signInWithPassword({
     email: syntheticEmail,
     password: password
   });
   
-  if (error) throw error;
-  return data;
+  return { data, error };
 }
 
-async function signOutUser() {
+export async function signOutUser() {
   const { error } = await supabaseClient.auth.signOut();
   if (error) throw error;
 }
 
-async function uploadMedia(file, path) {
+export async function uploadMedia(file, path) {
   const fileExt = file.name.split('.').pop();
   const fileName = `${Math.random().toString(36).substring(2)}_${Date.now()}.${fileExt}`;
   const filePath = `${path}/${fileName}`;
@@ -70,7 +70,7 @@ async function uploadMedia(file, path) {
   return data.publicUrl;
 }
 
-async function createSpot(spotData, foodFiles, menuFile) {
+export async function createSpot(spotData, foodFiles, menuFile) {
   const user = await getCurrentUser();
   if (!user) throw new Error(" Bạn cần đăng nhập để thêm quán.");
 
@@ -107,7 +107,7 @@ async function createSpot(spotData, foodFiles, menuFile) {
   return data[0];
 }
 
-async function fetchSpots() {
+export async function fetchSpots() {
   const { data, error } = await supabaseClient
     .from('spots')
     .select('*, profiles ( username, badge ), reviews ( quality_rating, hygiene_rating )')
@@ -117,7 +117,7 @@ async function fetchSpots() {
   return data;
 }
 
-async function reportItem(type, itemId, reason) {
+export async function reportItem(type, itemId, reason) {
   const user = await getCurrentUser();
   if (!user) throw new Error("Bạn cần đăng nhập để gửi báo cáo.");
 
@@ -137,7 +137,7 @@ async function reportItem(type, itemId, reason) {
   return data;
 }
 
-async function deleteItem(type, itemId) {
+export async function deleteItem(type, itemId) {
   const user = await getCurrentUser();
   if (!user) throw new Error("Bạn không có quyền xóa mục này.");
 
