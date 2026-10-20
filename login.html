@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng Nhập / Đăng Ký - ChùaLángEats</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        palette: {
+                            ember: '#EE3F24',
+                            cream: '#FFEFCB',
+                            matcha: '#023820',
+                            yolk: '#F9A11B',
+                            tofu: '#FFF4E6',
+                        }
+                    },
+                    fontFamily: { sans: ['Inter', 'sans-serif'] }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-palette-tofu text-palette-matcha min-h-screen flex flex-col justify-between">
+
+    <!-- NAVBAR -->
+    <header class="bg-white border-b border-palette-cream py-4">
+        <div class="max-w-7xl mx-auto px-4 flex justify-between items-center">
+            <a href="index.html" class="flex items-center gap-2 text-lg font-bold">
+                <span class="w-8 h-8 rounded-lg bg-palette-ember text-white flex items-center justify-center text-sm"><i class="fa-solid fa-utensils"></i></span>
+                <span>ChùaLáng<span class="text-palette-ember">Eats</span></span>
+            </a>
+            <a href="index.html" class="text-xs font-semibold text-palette-matcha/70 hover:text-palette-ember">← Quay lại Trang Chủ</a>
+        </div>
+    </header>
+
+    <!-- AUTH CONTAINER -->
+    <main class="flex-grow flex items-center justify-center p-4">
+        <div class="bg-white border border-palette-cream rounded-2xl shadow-lg max-w-md w-full p-6 sm:p-8">
+            
+            <!-- Tab Switcher -->
+            <div class="flex border-b border-palette-cream mb-6">
+                <button id="tabLogin" onclick="switchTab('login')" class="flex-1 py-2 font-bold text-sm text-palette-ember border-b-2 border-palette-ember transition">Đăng Nhập</button>
+                <button id="tabSignup" onclick="switchTab('signup')" class="flex-1 py-2 font-bold text-sm text-palette-matcha/50 hover:text-palette-matcha transition">Đăng Ký</button>
+            </div>
+
+            <!-- Notification Banner -->
+            <div id="authAlert" class="hidden text-xs p-3 rounded-xl mb-4"></div>
+
+            <!-- LOGIN FORM -->
+            <form id="formLogin" onsubmit="handleLogin(event)" class="space-y-4 text-xs">
+                <div>
+                    <label class="block font-semibold mb-1">Tên tài khoản (Username)</label>
+                    <input type="text" id="loginUsername" required placeholder="Ví dụ: anh123" class="w-full bg-palette-tofu border border-palette-cream rounded-xl p-3 font-medium focus:ring-2 focus:ring-palette-ember focus:outline-none">
+                </div>
+                <div>
+                    <label class="block font-semibold mb-1">Mật khẩu</label>
+                    <input type="password" id="loginPassword" required placeholder="••••••••" class="w-full bg-palette-tofu border border-palette-cream rounded-xl p-3 font-medium focus:ring-2 focus:ring-palette-ember focus:outline-none">
+                </div>
+                <button type="submit" class="w-full bg-palette-ember hover:bg-palette-ember/90 text-white font-bold py-3 rounded-xl shadow-md transition">Đăng Nhập Ngay</button>
+            </form>
+
+            <!-- SIGNUP FORM -->
+            <form id="formSignup" onsubmit="handleSignup(event)" class="hidden space-y-4 text-xs">
+                <div>
+                    <label class="block font-semibold mb-1">Tên tài khoản mong muốn</label>
+                    <input type="text" id="signupUsername" required placeholder="Viết liền không dấu (vd: ftu_foodie)" class="w-full bg-palette-tofu border border-palette-cream rounded-xl p-3 font-medium focus:ring-2 focus:ring-palette-ember focus:outline-none">
+                </div>
+                <div>
+                    <label class="block font-semibold mb-1">Mật khẩu</label>
+                    <input type="password" id="signupPassword" required minlength="6" placeholder="Tối thiểu 6 ký tự" class="w-full bg-palette-tofu border border-palette-cream rounded-xl p-3 font-medium focus:ring-2 focus:ring-palette-ember focus:outline-none">
+                </div>
+                <div>
+                    <label class="block font-semibold mb-1">Trường học / Huy hiệu Badge</label>
+                    <select id="signupBadge" class="w-full bg-palette-tofu border border-palette-cream rounded-xl p-3 font-medium focus:ring-2 focus:ring-palette-ember focus:outline-none">
+                        <option value="FTUer Verified">Sinh viên Ngoại Thương (FTUer)</option>
+                        <option value="DAVer Verified">Sinh viên Ngoại Giao (DAVer)</option>
+                        <option value="VYAer Verified">Sinh viên Thanh thiếu niên (VYAer)</option>
+                        <option value="Sinh Viên Verified">Sinh viên Trường khác</option>
+                    </select>
+                </div>
+                <button type="submit" class="w-full bg-palette-matcha hover:bg-palette-matcha/90 text-white font-bold py-3 rounded-xl shadow-md transition">Tạo Tài Khoản</button>
+            </form>
+
+        </div>
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="bg-palette-matcha text-palette-cream text-center text-xs py-4">
+        <p>© 2026 Chùa Láng Student Community</p>
+    </footer>
+
+    <script type="module">
+        import { signInUser, signUpUser } from './js/supabase.js';
+
+        window.switchTab = function(type) {
+            const loginForm = document.getElementById("formLogin");
+            const signupForm = document.getElementById("formSignup");
+            const tabLogin = document.getElementById("tabLogin");
+            const tabSignup = document.getElementById("tabSignup");
+
+            if (type === 'login') {
+                loginForm.classList.remove("hidden");
+                signupForm.classList.add("hidden");
+                tabLogin.className = "flex-1 py-2 font-bold text-sm text-palette-ember border-b-2 border-palette-ember transition";
+                tabSignup.className = "flex-1 py-2 font-bold text-sm text-palette-matcha/50 hover:text-palette-matcha transition";
+            } else {
+                signupForm.classList.remove("hidden");
+                loginForm.classList.add("hidden");
+                tabSignup.className = "flex-1 py-2 font-bold text-sm text-palette-matcha border-b-2 border-palette-matcha transition";
+                tabLogin.className = "flex-1 py-2 font-bold text-sm text-palette-matcha/50 hover:text-palette-matcha transition";
+            }
+        };
+
+        window.handleLogin = async function(e) {
+            e.preventDefault();
+            const alertBox = document.getElementById("authAlert");
+            const u = document.getElementById("loginUsername").value.trim();
+            const p = document.getElementById("loginPassword").value;
+
+            alertBox.classList.add("hidden");
+            const { data, error } = await signInUser(u, p);
+            
+            if (error) {
+                alertBox.textContent = "Đăng nhập thất bại: " + error.message;
+                alertBox.className = "text-xs p-3 rounded-xl mb-4 bg-rose-100 text-rose-700 font-semibold";
+            } else {
+                window.location.href = "profile.html";
+            }
+        };
+
+        window.handleSignup = async function(e) {
+            e.preventDefault();
+            const alertBox = document.getElementById("authAlert");
+            const u = document.getElementById("signupUsername").value.trim();
+            const p = document.getElementById("signupPassword").value;
+            const b = document.getElementById("signupBadge").value;
+
+            alertBox.classList.add("hidden");
+            const { data, error } = await signUpUser(u, p, b);
+
+            if (error) {
+                alertBox.textContent = "Đăng ký thất bại: " + error.message;
+                alertBox.className = "text-xs p-3 rounded-xl mb-4 bg-rose-100 text-rose-700 font-semibold";
+            } else {
+                alertBox.textContent = "Tạo tài khoản thành công! Đang chuyển hướng...";
+                alertBox.className = "text-xs p-3 rounded-xl mb-4 bg-emerald-100 text-emerald-800 font-semibold";
+                setTimeout(() => window.location.href = "profile.html", 1200);
+            }
+        };
+    </script>
+</body>
+</html>

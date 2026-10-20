@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thêm Quán Mới - ChùaLángEats</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        palette: {
+                            ember: '#EE3F24',
+                            cream: '#FFEFCB',
+                            matcha: '#023820',
+                            yolk: '#F9A11B',
+                            tofu: '#FFF4E6',
+                        }
+                    },
+                    fontFamily: { sans: ['Inter', 'sans-serif'] }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-palette-tofu text-palette-matcha font-sans antialiased min-h-screen flex flex-col justify-between">
+
+    <!-- NAVBAR -->
+    <header class="bg-white border-b border-palette-cream sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+            <a href="index.html" class="flex items-center gap-2 font-bold text-lg">
+                <span class="w-8 h-8 rounded-lg bg-palette-ember text-white flex items-center justify-center text-sm"><i class="fa-solid fa-utensils"></i></span>
+                <span>ChùaLáng<span class="text-palette-ember">Eats</span></span>
+            </a>
+            <div class="flex items-center gap-4 text-xs font-semibold">
+                <a href="feed.html" class="hover:text-palette-ember">📱 Feed</a>
+                <a href="add-spot.html" class="text-palette-ember">➕ Thêm Quán</a>
+                <button onclick="handleLogout()" class="bg-palette-cream text-palette-ember px-3 py-1.5 rounded-lg border border-palette-yolk/30">Đăng Xuất</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- FORM CONTENT -->
+    <main class="flex-grow max-w-2xl mx-auto w-full px-4 py-8 sm:py-10">
+
+        <div class="flex items-center justify-between mb-4">
+            <h1 class="font-bold text-xl">Thêm Quán Mới</h1>
+            <a href="feed.html" class="text-xs font-semibold text-palette-matcha/70 hover:text-palette-ember">← Quay lại Feed</a>
+        </div>
+
+        <div id="formAlert" class="hidden text-xs p-3 rounded-xl mb-4"></div>
+
+        <form id="addSpotForm" class="bg-white border border-palette-cream rounded-2xl shadow-sm p-5 sm:p-6 space-y-5 text-xs">
+
+            <!-- Name -->
+            <div>
+                <label class="block font-semibold mb-1">Tên Quán</label>
+                <input type="text" id="spotName" required placeholder="Bún Trộn Ngõ 84 Chùa Láng"
+                    class="w-full bg-palette-tofu border border-palette-cream rounded-xl p-3 font-medium focus:ring-2 focus:ring-palette-ember focus:outline-none">
+            </div>
+
+            <!-- Address -->
+            <div>
+                <label class="block font-semibold mb-1">Địa Chỉ</label>
+                <input type="text" id="address" required placeholder="Số 12 Ngõ 84 Chùa Láng"
+                    class="w-full bg-palette-tofu border border-palette-cream rounded-xl p-3 font-medium focus:ring-2 focus:ring-palette-ember focus:outline-none">
+            </div>
+
+            <!-- Category + Meal Type -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                    <label class="block font-semibold mb-1">Danh Mục</label>
+                    <select id="category" required
+                        class="w-full bg-palette-tofu border border-palette-cream rounded-xl p-3 font-medium focus:ring-2 focus:ring-palette-ember focus:outline-none">
+                        <option value="" disabled selected>Chọn danh mục</option>
+                        <option value="Ăn Sáng Nhanh">Ăn Sáng Nhanh</option>
+                        <option value="Ăn Trưa">Ăn Trưa</option>
+                        <option value="Ăn Vặt">Ăn Vặt</option>
+                        <option value="Bún / Phở">Bún / Phở</option>
+                        <option value="Cơm Sinh Viên">Cơm Sinh Viên</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block font-semibold mb-1">Bữa Ăn</label>
+                    <select id="mealType" required
+                        class="w-full bg-palette-tofu border border-palette-cream rounded-xl p-3 font-medium focus:ring-2 focus:ring-palette-ember focus:outline-none">
+                        <option value="" disabled selected>Chọn bữa ăn</option>
+                        <option value="breakfast">Bữa Sáng</option>
+                        <option value="lunch">Bữa Trưa</option>
+                        <option value="snack">Ăn Vặt</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Price range -->
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block font-semibold mb-1">Giá Tối Thiểu (VNĐ)</label>
+                    <input type="number" id="minPrice" required min="0" step="1000" placeholder="20000"
+                        class="w-full bg-palette-tofu border border-palette-cream rounded-xl p-3 font-medium focus:ring-2 focus:ring-palette-ember focus:outline-none">
+                </div>
+                <div>
+                    <label class="block font-semibold mb-1">Giá Tối Đa (VNĐ)</label>
+                    <input type="number" id="maxPrice" required min="0" step="1000" placeholder="30000"
+                        class="w-full bg-palette-tofu border border-palette-cream rounded-xl p-3 font-medium focus:ring-2 focus:ring-palette-ember focus:outline-none">
+                </div>
+            </div>
+
+            <!-- Distance -->
+            <div>
+                <label class="block font-semibold mb-1">Khoảng Cách Từ Cổng Trường (phút đi bộ)</label>
+                <input type="number" id="distanceMinutes" required min="0" placeholder="3"
+                    class="w-full bg-palette-tofu border border-palette-cream rounded-xl p-3 font-medium focus:ring-2 focus:ring-palette-ember focus:outline-none">
+            </div>
+
+            <!-- Description -->
+            <div>
+                <label class="block font-semibold mb-1">Mô Tả / Mẹo Cho Sinh Viên</label>
+                <textarea id="description" rows="4" required
+                    placeholder="Quán này có gì đặc biệt? Nên gọi món gì? Giờ nào vắng khách?"
+                    class="w-full bg-palette-tofu border border-palette-cream rounded-xl p-3 font-medium focus:ring-2 focus:ring-palette-ember focus:outline-none"></textarea>
+            </div>
+
+            <!-- Tags -->
+            <div>
+                <label class="block font-semibold mb-1">Tags (cách nhau bởi dấu phẩy)</label>
+                <input type="text" id="tags" placeholder="Gần DAV, Bát Đầy, Trà Đá Free"
+                    class="w-full bg-palette-tofu border border-palette-cream rounded-xl p-3 font-medium focus:ring-2 focus:ring-palette-ember focus:outline-none">
+            </div>
+
+            <!-- Food photos dropzone -->
+            <div>
+                <label class="block font-semibold mb-1">Ảnh Món Ăn / Quán (1–2 ảnh)</label>
+                <div id="foodDropzone" class="border-2 border-dashed border-palette-cream rounded-xl p-4 text-center cursor-pointer hover:border-palette-ember transition">
+                    <input type="file" id="foodPhotos" accept="image/*" multiple class="hidden">
+                    <div id="foodDropzoneEmpty" class="py-6 text-palette-matcha/50">
+                        <i class="fa-solid fa-image text-2xl mb-2 block"></i>
+                        <p>Kéo thả ảnh vào đây hoặc bấm để chọn (tối đa 2 ảnh)</p>
+                    </div>
+                    <div id="foodPreviewGrid" class="hidden grid grid-cols-2 gap-2"></div>
+                </div>
+                <p id="foodError" class="hidden text-rose-600 font-semibold mt-1"></p>
+            </div>
+
+            <!-- Menu photo dropzone -->
+            <div>
+                <label class="block font-semibold mb-1">Ảnh Thực Đơn / Bảng Giá</label>
+                <div id="menuDropzone" class="border-2 border-dashed border-palette-cream rounded-xl p-4 text-center cursor-pointer hover:border-palette-ember transition">
+                    <input type="file" id="menuPhoto" accept="image/*" class="hidden">
+                    <div id="menuDropzoneEmpty" class="py-6 text-palette-matcha/50">
+                        <i class="fa-solid fa-receipt text-2xl mb-2 block"></i>
+                        <p>Kéo thả ảnh vào đây hoặc bấm để chọn</p>
+                    </div>
+                    <div id="menuPreviewWrap" class="hidden">
+                        <img id="menuPreviewImg" class="max-h-40 mx-auto rounded-lg object-contain" alt="Xem trước ảnh thực đơn">
+                        <button type="button" id="menuRemoveBtn" class="mt-2 text-rose-600 font-semibold">Xóa ảnh</button>
+                    </div>
+                </div>
+                <p id="menuError" class="hidden text-rose-600 font-semibold mt-1"></p>
+            </div>
+
+            <button type="submit" id="submitBtn"
+                class="w-full bg-palette-ember hover:bg-palette-ember/90 text-white font-bold py-3 rounded-xl shadow-md transition disabled:opacity-70">
+                <span id="submitBtnText">Đăng Quán Ăn</span>
+            </button>
+
+        </form>
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="bg-palette-matcha text-palette-cream text-center text-xs py-4">
+        <p>© 2026 Chùa Láng Student Community</p>
+    </footer>
+
+    <script type="module">
+        import { getCurrentUser, signOutUser, createSpot } from './js/supabase.js';
+
+        let foodFiles = [];
+        let menuFile = null;
+
+        init();
+
+        async function init() {
+            const { user } = await getCurrentUser();
+            if (!user) {
+                window.location.href = "login.html";
+            }
+        }
+
+        window.handleLogout = async function() {
+            await signOutUser();
+            window.location.href = "index.html";
+        };
+
+        // ---------------------------------------------------------------
+        // Food photos dropzone (up to 2 files)
+        // ---------------------------------------------------------------
+        const foodDropzone = document.getElementById("foodDropzone");
+        const foodInput = document.getElementById("foodPhotos");
+        const foodEmpty = document.getElementById("foodDropzoneEmpty");
+        const foodGrid = document.getElementById("foodPreviewGrid");
+        const foodError = document.getElementById("foodError");
+
+        foodDropzone.addEventListener("click", () => foodInput.click());
+        foodInput.addEventListener("change", (e) => addFoodFiles(e.target.files));
+        ["dragover", "dragleave", "drop"].forEach((evt) => foodDropzone.addEventListener(evt, handleFoodDrag));
+
+        function handleFoodDrag(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            foodDropzone.classList.toggle("border-palette-ember", e.type === "dragover");
+            if (e.type === "drop" && e.dataTransfer?.files?.length) {
+                addFoodFiles(e.dataTransfer.files);
+            }
+        }
+
+        function addFoodFiles(fileList) {
+            const incoming = Array.from(fileList).filter((f) => f.type.startsWith("image/"));
+            foodFiles = [...foodFiles, ...incoming].slice(0, 2);
+            foodError.classList.add("hidden");
+            renderFoodPreviews();
+            foodInput.value = "";
+        }
+
+        function renderFoodPreviews() {
+            if (foodFiles.length === 0) {
+                foodEmpty.classList.remove("hidden");
+                foodGrid.classList.add("hidden");
+                foodGrid.innerHTML = "";
+                return;
+            }
+            foodEmpty.classList.add("hidden");
+            foodGrid.classList.remove("hidden");
+            foodGrid.innerHTML = foodFiles.map((file, i) => `
+                <div class="relative">
+                    <img src="${URL.createObjectURL(file)}" class="w-full h-24 object-cover rounded-lg">
+                    <button type="button" data-index="${i}" class="food-remove-btn absolute top-1 right-1 w-6 h-6 bg-white/90 rounded-full text-rose-600 font-bold flex items-center justify-center shadow">✕</button>
+                </div>
+            `).join("");
+
+            foodGrid.querySelectorAll(".food-remove-btn").forEach((btn) => {
+                btn.addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    foodFiles.splice(Number(btn.dataset.index), 1);
+                    renderFoodPreviews();
+                });
+            });
+        }
+
+        // ---------------------------------------------------------------
+        // Menu photo dropzone (single file)
+        // ---------------------------------------------------------------
+        const menuDropzone = document.getElementById("menuDropzone");
+        const menuInput = document.getElementById("menuPhoto");
+        const menuEmpty = document.getElementById("menuDropzoneEmpty");
+        const menuPreviewWrap = document.getElementById("menuPreviewWrap");
+        const menuPreviewImg = document.getElementById("menuPreviewImg");
+        const menuError = document.getElementById("menuError");
+
+        menuDropzone.addEventListener("click", () => menuInput.click());
+        menuInput.addEventListener("change", (e) => setMenuFile(e.target.files[0]));
+        ["dragover", "dragleave", "drop"].forEach((evt) => menuDropzone.addEventListener(evt, handleMenuDrag));
+
+        function handleMenuDrag(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            menuDropzone.classList.toggle("border-palette-ember", e.type === "dragover");
+            if (e.type === "drop" && e.dataTransfer?.files?.length) {
+                setMenuFile(e.dataTransfer.files[0]);
+            }
+        }
+
+        function setMenuFile(file) {
+            if (!file || !file.type.startsWith("image/")) return;
+            menuFile = file;
+            menuError.classList.add("hidden");
+            menuEmpty.classList.add("hidden");
+            menuPreviewWrap.classList.remove("hidden");
+            menuPreviewImg.src = URL.createObjectURL(file);
+            menuInput.value = "";
+        }
+
+        document.getElementById("menuRemoveBtn").addEventListener("click", (e) => {
+            e.stopPropagation();
+            menuFile = null;
+            menuEmpty.classList.remove("hidden");
+            menuPreviewWrap.classList.add("hidden");
+        });
+
+        // ---------------------------------------------------------------
+        // Submit
+        // ---------------------------------------------------------------
+        document.getElementById("addSpotForm").addEventListener("submit", handleSubmit);
+
+        async function handleSubmit(e) {
+            e.preventDefault();
+
+            foodError.classList.add("hidden");
+            menuError.classList.add("hidden");
+            document.getElementById("formAlert").classList.add("hidden");
+
+            let hasError = false;
+
+            if (foodFiles.length < 1 || foodFiles.length > 2) {
+                foodError.textContent = "Vui lòng chọn từ 1 đến 2 ảnh món ăn.";
+                foodError.classList.remove("hidden");
+                hasError = true;
+            }
+
+            if (!menuFile) {
+                menuError.textContent = "Vui lòng chọn 1 ảnh thực đơn / bảng giá.";
+                menuError.classList.remove("hidden");
+                hasError = true;
+            }
+
+            const minPrice = Number(document.getElementById("minPrice").value);
+            const maxPrice = Number(document.getElementById("maxPrice").value);
+            if (minPrice > maxPrice) {
+                showAlert("Giá tối thiểu không được lớn hơn giá tối đa.", "error");
+                hasError = true;
+            }
+
+            if (hasError) return;
+
+            const submitBtn = document.getElementById("submitBtn");
+            const submitBtnText = document.getElementById("submitBtnText");
+            submitBtn.disabled = true;
+            submitBtnText.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang tải ảnh và tạo quán...';
+
+            const tags = document.getElementById("tags").value
+                .split(",")
+                .map((t) => t.trim())
+                .filter(Boolean);
+
+            const spotData = {
+                name: document.getElementById("spotName").value.trim(),
+                address: document.getElementById("address").value.trim(),
+                category: document.getElementById("category").value,
+                meal_type: document.getElementById("mealType").value,
+                min_price: minPrice,
+                max_price: maxPrice,
+                distance_minutes: Number(document.getElementById("distanceMinutes").value),
+                description: document.getElementById("description").value.trim(),
+                tags,
+            };
+
+            const { error } = await createSpot(spotData, foodFiles, menuFile);
+
+            if (error) {
+                showAlert("Không thể tạo quán: " + error.message, "error");
+                submitBtn.disabled = false;
+                submitBtnText.textContent = "Đăng Quán Ăn";
+                return;
+            }
+
+            showAlert("Tạo quán thành công! Đang chuyển hướng...", "success");
+            setTimeout(() => (window.location.href = "feed.html"), 1500);
+        }
+
+        function showAlert(message, type) {
+            const box = document.getElementById("formAlert");
+            box.textContent = message;
+            box.className = `text-xs p-3 rounded-xl mb-4 font-semibold ${type === "success" ? "bg-emerald-100 text-emerald-800" : "bg-rose-100 text-rose-700"}`;
+            box.classList.remove("hidden");
+            box.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+    </script>
+</body>
+</html>
