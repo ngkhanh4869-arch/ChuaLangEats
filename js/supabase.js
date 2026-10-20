@@ -50,6 +50,7 @@ export async function signInUser(username, password) {
 export async function signOutUser() {
   const { error } = await supabaseClient.auth.signOut();
   if (error) throw error;
+  window.location.href = 'login.html';
 }
 
 export async function uploadMedia(file, path) {
@@ -72,7 +73,7 @@ export async function uploadMedia(file, path) {
 
 export async function createSpot(spotData, foodFiles, menuFile) {
   const user = await getCurrentUser();
-  if (!user) throw new Error(" Bạn cần đăng nhập để thêm quán.");
+  if (!user) throw new Error("Bạn cần đăng nhập để thêm quán.");
 
   const foodUrls = [];
   for (const file of foodFiles) {
