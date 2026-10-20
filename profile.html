@@ -38,7 +38,7 @@
             <div class="flex items-center gap-4 text-xs font-semibold">
                 <a href="feed.html" class="hover:text-palette-ember">📱 Feed</a>
                 <a href="add-spot.html" class="hover:text-palette-ember">➕ Thêm Quán</a>
-                <button onclick="handleLogout()" class="bg-palette-cream text-palette-ember px-3 py-1.5 rounded-lg border border-palette-yolk/30">Đăng Xuất</button>
+                <button onclick="handleLogout()" class="bg-palette-cream text-palette-ember px-3 py-1.5 rounded-lg border border-palette-yolk/30 hover:bg-palette-yolk/20 transition">Đăng Xuất</button>
             </div>
         </div>
     </header>
@@ -104,7 +104,7 @@
     </footer>
 
     <script type="module">
-        import { supabase, getCurrentUser, signOutUser, deleteItem } from './js/supabase.js';
+        import { supabaseClient, getCurrentUser, signOutUser, deleteItem } from './js/supabase.js?v=5';
 
         let currentUser = null;
         let currentProfile = null;
@@ -112,7 +112,7 @@
         init();
 
         async function init() {
-            const { user, profile } = await getCurrentUser();
+            const user = await getCurrentUser();
 
             if (!user) {
                 window.location.href = "login.html";
@@ -120,21 +120,24 @@
             }
 
             currentUser = user;
-            currentProfile = profile;
-            renderProfile(profile);
+            currentProfile = user.profile || {};
+            renderProfile(currentProfile, user);
             loadMySpots();
             loadMyReviews();
         }
 
-        function renderProfile(profile) {
-            const username = profile?.username ?? "—";
+        function renderProfile(profile, user) {
+            const username = profile?.username || user?.user_metadata?.username || "Thành viên";
+            const badge = profile?.badge || user?.user_metadata?.badge || "Chưa xác thực";
+            
             document.getElementById("avatarInitial").textContent = username.charAt(0).toUpperCase();
             document.getElementById("displayUsername").textContent = username;
-            document.getElementById("displayBadge").textContent = profile?.badge ?? "Chưa xác thực";
-            document.getElementById("editBadgeSelect").value = profile?.badge ?? "Sinh Viên Verified";
+            document.getElementById("displayBadge").textContent = badge;
+            document.getElementById("editBadgeSelect").value = badge;
 
-            const joined = profile?.created_at
-                ? new Date(profile.created_at).toLocaleDateString("vi-VN", { year: "numeric", month: "long", day: "numeric" })
+            const joinedRaw = profile?.created_at || user?.created_at;
+            const joined = joinedRaw
+                ? new Date(joinedRaw).toLocaleDateString("vi-VN", { year: "numeric", month: "long", day: "numeric" })
                 : "—";
             document.getElementById("joinedDate").textContent = `Tham gia từ ${joined}`;
         }
@@ -149,7 +152,7 @@
             const alertBox = document.getElementById("profileAlert");
             const newBadge = document.getElementById("editBadgeSelect").value;
 
-            const { error } = await supabase
+            const { error } = await supabaseClient
                 .from("profiles")
                 .update({ badge: newBadge })
                 .eq("id", currentUser.id);
@@ -160,7 +163,7 @@
                 alertBox.className = "text-xs p-3 rounded-xl mb-4 bg-rose-100 text-rose-700 font-semibold";
             } else {
                 currentProfile.badge = newBadge;
-                renderProfile(currentProfile);
+                renderProfile(currentProfile, currentUser);
                 alertBox.textContent = "Đã lưu thay đổi!";
                 alertBox.className = "text-xs p-3 rounded-xl mb-4 bg-emerald-100 text-emerald-800 font-semibold";
                 window.toggleEditProfile();
@@ -191,7 +194,7 @@
 
         async function loadMySpots() {
             const container = document.getElementById("panelSpots");
-            const { data, error } = await supabase
+            const { data, error } = await supabaseClient
                 .from("spots")
                 .select("*")
                 .eq("created_by", currentUser.id)
@@ -227,7 +230,7 @@
 
         async function loadMyReviews() {
             const container = document.getElementById("panelReviews");
-            const { data, error } = await supabase
+            const { data, error } = await supabaseClient
                 .from("reviews")
                 .select("*, spots ( name )")
                 .eq("user_id", currentUser.id)
@@ -261,27 +264,31 @@
 
         window.removeSpot = async function(id) {
             if (!confirm("Xóa quán này? Hành động không thể hoàn tác.")) return;
-            const { error } = await deleteItem("spot", id);
-            if (error) {
-                alert("Không thể xóa: " + error.message);
-            } else {
+            try {
+                await deleteItem("spot", id);
                 loadMySpots();
+            } catch (err) {
+                alert("Không thể xóa: " + err.message);
             }
         };
 
         window.removeReview = async function(id) {
             if (!confirm("Xóa đánh giá này?")) return;
-            const { error } = await deleteItem("review", id);
-            if (error) {
-                alert("Không thể xóa: " + error.message);
-            } else {
+            try {
+                await deleteItem("review", id);
                 loadMyReviews();
+            } catch (err) {
+                alert("Không thể xóa: " + err.message);
             }
         };
 
         window.handleLogout = async function() {
-            await signOutUser();
-            window.location.href = "index.html";
+            try {
+                await signOutUser();
+            } catch (err) {
+                console.error(err);
+            }
+            window.location.href = "login.html";
         };
 
         function escapeHtml(str) {
