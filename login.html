@@ -53,7 +53,7 @@
             <div id="authAlert" class="hidden text-xs p-3 rounded-xl mb-4"></div>
 
             <!-- LOGIN FORM -->
-            <form id="formLogin" onsubmit="handleLogin(event)" class="space-y-4 text-xs">
+            <form id="formLogin" class="space-y-4 text-xs">
                 <div>
                     <label class="block font-semibold mb-1">Tên tài khoản (Username)</label>
                     <input type="text" id="loginUsername" required placeholder="Ví dụ: anh123" class="w-full bg-palette-tofu border border-palette-cream rounded-xl p-3 font-medium focus:ring-2 focus:ring-palette-ember focus:outline-none">
@@ -66,7 +66,7 @@
             </form>
 
             <!-- SIGNUP FORM -->
-            <form id="formSignup" onsubmit="handleSignup(event)" class="hidden space-y-4 text-xs">
+            <form id="formSignup" class="hidden space-y-4 text-xs">
                 <div>
                     <label class="block font-semibold mb-1">Tên tài khoản mong muốn</label>
                     <input type="text" id="signupUsername" required placeholder="Viết liền không dấu (vd: ftu_foodie)" class="w-full bg-palette-tofu border border-palette-cream rounded-xl p-3 font-medium focus:ring-2 focus:ring-palette-ember focus:outline-none">
@@ -121,42 +121,51 @@
     <script type="module">
         import { signInUser, signUpUser } from './js/supabase.js';
 
-        window.handleLogin = async function(e) {
-            e.preventDefault();
-            const alertBox = document.getElementById("authAlert");
-            const u = document.getElementById("loginUsername").value.trim();
-            const p = document.getElementById("loginPassword").value;
+        document.addEventListener('DOMContentLoaded', () => {
+            const formLogin = document.getElementById("formLogin");
+            const formSignup = document.getElementById("formSignup");
 
-            alertBox.classList.add("hidden");
-            const { data, error } = await signInUser(u, p);
-            
-            if (error) {
-                alertBox.textContent = "Đăng nhập thất bại: " + error.message;
-                alertBox.className = "text-xs p-3 rounded-xl mb-4 bg-rose-100 text-rose-700 font-semibold";
-            } else {
-                window.location.href = "profile.html";
+            if (formLogin) {
+                formLogin.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const alertBox = document.getElementById("authAlert");
+                    const u = document.getElementById("loginUsername").value.trim();
+                    const p = document.getElementById("loginPassword").value;
+
+                    alertBox.classList.add("hidden");
+                    const { data, error } = await signInUser(u, p);
+                    
+                    if (error) {
+                        alertBox.textContent = "Đăng nhập thất bại: " + error.message;
+                        alertBox.className = "text-xs p-3 rounded-xl mb-4 bg-rose-100 text-rose-700 font-semibold";
+                    } else {
+                        window.location.href = "profile.html";
+                    }
+                });
             }
-        };
 
-        window.handleSignup = async function(e) {
-            e.preventDefault();
-            const alertBox = document.getElementById("authAlert");
-            const u = document.getElementById("signupUsername").value.trim();
-            const p = document.getElementById("signupPassword").value;
-            const b = document.getElementById("signupBadge").value;
+            if (formSignup) {
+                formSignup.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const alertBox = document.getElementById("authAlert");
+                    const u = document.getElementById("signupUsername").value.trim();
+                    const p = document.getElementById("signupPassword").value;
+                    const b = document.getElementById("signupBadge").value;
 
-            alertBox.classList.add("hidden");
-            const { data, error } = await signUpUser(u, p, b);
+                    alertBox.classList.add("hidden");
+                    const { data, error } = await signUpUser(u, p, b);
 
-            if (error) {
-                alertBox.textContent = "Đăng ký thất bại: " + error.message;
-                alertBox.className = "text-xs p-3 rounded-xl mb-4 bg-rose-100 text-rose-700 font-semibold";
-            } else {
-                alertBox.textContent = "Tạo tài khoản thành công! Đang chuyển hướng...";
-                alertBox.className = "text-xs p-3 rounded-xl mb-4 bg-emerald-100 text-emerald-800 font-semibold";
-                setTimeout(() => window.location.href = "profile.html", 1200);
+                    if (error) {
+                        alertBox.textContent = "Đăng ký thất bại: " + error.message;
+                        alertBox.className = "text-xs p-3 rounded-xl mb-4 bg-rose-100 text-rose-700 font-semibold";
+                    } else {
+                        alertBox.textContent = "Tạo tài khoản thành công! Đang chuyển hướng...";
+                        alertBox.className = "text-xs p-3 rounded-xl mb-4 bg-emerald-100 text-emerald-800 font-semibold";
+                        setTimeout(() => window.location.href = "profile.html", 1200);
+                    }
+                });
             }
-        };
+        });
     </script>
 </body>
 </html>
