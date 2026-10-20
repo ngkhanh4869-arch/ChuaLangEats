@@ -95,7 +95,7 @@
         <p>© 2026 Chùa Láng Student Community</p>
     </footer>
 
-    <!-- GLOBAL TAB SWITCHER SCRIPT -->
+    <!-- TAB SWITCHER FUNCTION -->
     <script>
         function switchTab(type) {
             const loginForm = document.getElementById("formLogin");
@@ -119,14 +119,14 @@
 
     <!-- AUTH HELPER MODULE -->
     <script type="module">
-        import { signInUser, signUpUser } from './js/supabase.js';
+        import { signInUser, signUpUser } from './js/supabase.js?v=4';
 
-        document.addEventListener('DOMContentLoaded', () => {
+        function setupAuthListeners() {
             const formLogin = document.getElementById("formLogin");
             const formSignup = document.getElementById("formSignup");
 
             if (formLogin) {
-                formLogin.addEventListener('submit', async (e) => {
+                formLogin.onsubmit = async (e) => {
                     e.preventDefault();
                     const alertBox = document.getElementById("authAlert");
                     const u = document.getElementById("loginUsername").value.trim();
@@ -141,11 +141,11 @@
                     } else {
                         window.location.href = "profile.html";
                     }
-                });
+                };
             }
 
             if (formSignup) {
-                formSignup.addEventListener('submit', async (e) => {
+                formSignup.onsubmit = async (e) => {
                     e.preventDefault();
                     const alertBox = document.getElementById("authAlert");
                     const u = document.getElementById("signupUsername").value.trim();
@@ -163,9 +163,15 @@
                         alertBox.className = "text-xs p-3 rounded-xl mb-4 bg-emerald-100 text-emerald-800 font-semibold";
                         setTimeout(() => window.location.href = "profile.html", 1200);
                     }
-                });
+                };
             }
-        });
+        }
+
+        if (document.readyState === "loading") {
+            document.addEventListener("DOMContentLoaded", setupAuthListeners);
+        } else {
+            setupAuthListeners();
+        }
     </script>
 </body>
 </html>
