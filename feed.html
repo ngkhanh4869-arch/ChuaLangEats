@@ -1,209 +1,63 @@
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bảng Tin - ChùaLángEats</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        palette: {
-                            ember: '#EE3F24',
-                            cream: '#FFEFCB',
-                            matcha: '#023820',
-                            yolk: '#F9A11B',
-                            tofu: '#FFF4E6',
-                        }
-                    },
-                    fontFamily: { sans: ['Inter', 'sans-serif'] }
-                }
-            }
-        }
-    </script>
-</head>
-<body class="bg-palette-tofu text-palette-matcha font-sans antialiased min-h-screen flex flex-col justify-between">
-
-    <!-- NAVBAR -->
-    <header class="bg-white border-b border-palette-cream sticky top-0 z-50">
-        <div class="max-w-2xl mx-auto px-4 h-16 flex items-center justify-between">
-            <a href="index.html" class="flex items-center gap-2 font-bold text-lg">
-                <span class="w-8 h-8 rounded-lg bg-palette-ember text-white flex items-center justify-center text-sm"><i class="fa-solid fa-utensils"></i></span>
-                <span>ChùaLáng<span class="text-palette-ember">Eats</span></span>
-            </a>
-            <div class="flex items-center gap-3 sm:gap-4 text-xs font-semibold">
-                <a href="index.html" class="hover:text-palette-ember">📍 Bản Đồ</a>
-                <a href="add-spot.html" class="hover:text-palette-ember">➕ Thêm Quán</a>
-                <div id="authArea"></div>
-            </div>
-        </div>
-    </header>
-
-    <!-- FEED -->
-    <main class="flex-grow max-w-2xl mx-auto w-full px-4 py-6">
-
-        <!-- Skeleton loader (visible immediately, hidden once data arrives) -->
-        <div id="feedSkeleton" class="space-y-4">
-            <div class="bg-white border border-palette-cream rounded-2xl overflow-hidden animate-pulse">
-                <div class="flex items-center gap-3 p-4">
-                    <div class="w-10 h-10 rounded-full bg-palette-cream"></div>
-                    <div class="flex-grow space-y-2">
-                        <div class="h-3 w-24 bg-palette-cream rounded"></div>
-                        <div class="h-2 w-16 bg-palette-cream rounded"></div>
-                    </div>
-                </div>
-                <div class="h-56 bg-palette-cream"></div>
-                <div class="p-4 space-y-2">
-                    <div class="h-3 w-3/4 bg-palette-cream rounded"></div>
-                    <div class="h-3 w-1/2 bg-palette-cream rounded"></div>
-                    <div class="h-3 w-full bg-palette-cream rounded"></div>
-                </div>
-            </div>
-            <div class="bg-white border border-palette-cream rounded-2xl overflow-hidden animate-pulse">
-                <div class="flex items-center gap-3 p-4">
-                    <div class="w-10 h-10 rounded-full bg-palette-cream"></div>
-                    <div class="flex-grow space-y-2">
-                        <div class="h-3 w-24 bg-palette-cream rounded"></div>
-                        <div class="h-2 w-16 bg-palette-cream rounded"></div>
-                    </div>
-                </div>
-                <div class="h-56 bg-palette-cream"></div>
-                <div class="p-4 space-y-2">
-                    <div class="h-3 w-3/4 bg-palette-cream rounded"></div>
-                    <div class="h-3 w-1/2 bg-palette-cream rounded"></div>
-                    <div class="h-3 w-full bg-palette-cream rounded"></div>
-                </div>
-            </div>
-            <div class="bg-white border border-palette-cream rounded-2xl overflow-hidden animate-pulse">
-                <div class="flex items-center gap-3 p-4">
-                    <div class="w-10 h-10 rounded-full bg-palette-cream"></div>
-                    <div class="flex-grow space-y-2">
-                        <div class="h-3 w-24 bg-palette-cream rounded"></div>
-                        <div class="h-2 w-16 bg-palette-cream rounded"></div>
-                    </div>
-                </div>
-                <div class="h-56 bg-palette-cream"></div>
-                <div class="p-4 space-y-2">
-                    <div class="h-3 w-3/4 bg-palette-cream rounded"></div>
-                    <div class="h-3 w-1/2 bg-palette-cream rounded"></div>
-                    <div class="h-3 w-full bg-palette-cream rounded"></div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Empty state -->
-        <div id="feedEmpty" class="hidden text-center py-16">
-            <div class="text-4xl mb-3">🍜</div>
-            <p class="font-bold text-sm mb-2">Chưa có bài đăng nào</p>
-            <p class="text-xs text-palette-matcha/60 mb-4">Hãy là người đầu tiên thêm quán!</p>
-            <a href="add-spot.html" class="inline-block bg-palette-ember text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-md hover:bg-palette-ember/90 transition">+ Thêm Quán Ngay</a>
-        </div>
-
-        <!-- Real feed -->
-        <div id="feedList" class="hidden space-y-4"></div>
-
-    </main>
-
-    <!-- FOOTER -->
-    <footer class="bg-palette-matcha text-palette-cream text-center text-xs py-4">
-        <p>© 2026 Chùa Láng Student Community</p>
-    </footer>
-
-    <!-- REPORT MODAL -->
-    <div id="reportModal" class="hidden fixed inset-0 bg-black/40 z-[60] flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl shadow-lg max-w-sm w-full p-6">
-            <div class="flex items-center justify-between mb-4">
-                <h3 class="font-bold text-sm">Báo Cáo Quán Ăn</h3>
-                <button type="button" onclick="closeReportModal()" class="text-palette-matcha/50 hover:text-palette-matcha text-lg leading-none">✕</button>
-            </div>
-            <form id="reportForm" class="space-y-3 text-xs">
-                <label class="flex items-center gap-2 border border-palette-cream rounded-xl p-3 cursor-pointer hover:bg-palette-tofu transition">
-                    <input type="radio" name="reportReason" value="Quán đã đóng cửa" class="accent-palette-ember">
-                    <span>Quán đã đóng cửa</span>
-                </label>
-                <label class="flex items-center gap-2 border border-palette-cream rounded-xl p-3 cursor-pointer hover:bg-palette-tofu transition">
-                    <input type="radio" name="reportReason" value="Giá sai thực tế" class="accent-palette-ember">
-                    <span>Giá sai thực tế</span>
-                </label>
-                <label class="flex items-center gap-2 border border-palette-cream rounded-xl p-3 cursor-pointer hover:bg-palette-tofu transition">
-                    <input type="radio" name="reportReason" value="Nội dung vi phạm" class="accent-palette-ember">
-                    <span>Nội dung vi phạm</span>
-                </label>
-                <p id="reportError" class="hidden text-rose-600 font-semibold"></p>
-                <button type="submit" id="reportSubmitBtn" class="w-full bg-palette-ember hover:bg-palette-ember/90 text-white font-bold py-2.5 rounded-xl shadow-md transition disabled:opacity-70">Gửi Báo Cáo</button>
-            </form>
-        </div>
-    </div>
-
-    <!-- TOAST -->
-    <div id="toast" class="hidden fixed bottom-6 left-1/2 -translate-x-1/2 bg-palette-matcha text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-lg z-[70]"></div>
-
-    <script type="module">
-        import { getCurrentUser, fetchSpots, reportItem, deleteItem } from './js/supabase.js';
+<script type="module">
+        import { getCurrentUser, fetchSpots, reportItem, deleteItem } from './js/supabase.js?v=5';
 
         let currentUser = null;
         let currentReportSpotId = null;
 
-        init();
-
         async function init() {
-            const { user, profile } = await getCurrentUser();
+            const user = await getCurrentUser();
             currentUser = user;
-            renderAuthArea(user, profile);
+            renderAuthArea(user, user?.profile);
             await loadFeed();
         }
 
-        // ---------------------------------------------------------------
-        // Auth-aware header slot: badge + profile link, or "Đăng Nhập"
-        // ---------------------------------------------------------------
         function renderAuthArea(user, profile) {
             const authArea = document.getElementById("authArea");
+            if (!authArea) return;
             if (user) {
-                const initial = (profile?.username || "?").charAt(0).toUpperCase();
+                const username = profile?.username || user?.user_metadata?.username || "Thành viên";
+                const initial = username.charAt(0).toUpperCase();
+                const badge = profile?.badge || user?.user_metadata?.badge || "Trang Cá Nhân";
                 authArea.innerHTML = `
                     <a href="profile.html" class="flex items-center gap-1.5 hover:text-palette-ember">
                         <span class="w-6 h-6 rounded-full bg-palette-ember text-white flex items-center justify-center text-[11px] font-bold">${initial}</span>
-                        <span>👤 ${escapeHtml(profile?.badge || profile?.username || "Trang Cá Nhân")}</span>
+                        <span>👤 ${escapeHtml(badge)}</span>
                     </a>`;
             } else {
                 authArea.innerHTML = `<a href="login.html" class="bg-palette-ember text-white px-3 py-1.5 rounded-lg hover:bg-palette-ember/90 transition">Đăng Nhập</a>`;
             }
         }
 
-        // ---------------------------------------------------------------
-        // Load + render feed
-        // ---------------------------------------------------------------
         async function loadFeed() {
             const skeleton = document.getElementById("feedSkeleton");
             const empty = document.getElementById("feedEmpty");
             const list = document.getElementById("feedList");
 
-            skeleton.classList.remove("hidden");
-            empty.classList.add("hidden");
-            list.classList.add("hidden");
+            skeleton?.classList.remove("hidden");
+            empty?.classList.add("hidden");
+            list?.classList.add("hidden");
 
-            const { data, error } = await fetchSpots();
+            try {
+                const data = await fetchSpots();
+                skeleton?.classList.add("hidden");
 
-            skeleton.classList.add("hidden");
+                if (!data || data.length === 0) {
+                    empty?.classList.remove("hidden");
+                    return;
+                }
 
-            if (error) {
-                list.classList.remove("hidden");
-                list.innerHTML = `<p class="text-xs text-rose-600 text-center py-10">Không tải được bảng tin: ${escapeHtml(error.message)}</p>`;
-                return;
+                if (list) {
+                    list.classList.remove("hidden");
+                    list.innerHTML = data.map((spot) => renderSpotCard(spot)).join("");
+                    attachCardListeners();
+                }
+            } catch (err) {
+                skeleton?.classList.add("hidden");
+                if (list) {
+                    list.classList.remove("hidden");
+                    list.innerHTML = `<p class="text-xs text-rose-600 text-center py-10">Không tải được bảng tin: ${escapeHtml(err.message)}</p>`;
+                }
             }
-
-            if (!data || data.length === 0) {
-                empty.classList.remove("hidden");
-                return;
-            }
-
-            list.classList.remove("hidden");
-            list.innerHTML = data.map((spot) => renderSpotCard(spot)).join("");
-            attachCardListeners();
         }
 
         function renderSpotCard(spot) {
@@ -228,7 +82,6 @@
 
             return `
             <article class="bg-white border border-palette-cream rounded-2xl shadow-sm overflow-hidden">
-                <!-- Post header -->
                 <div class="flex items-center gap-3 p-4">
                     <div class="w-10 h-10 shrink-0 rounded-full bg-palette-ember text-white flex items-center justify-center font-bold">${initial}</div>
                     <div class="min-w-0 flex-grow">
@@ -241,7 +94,6 @@
                     ${spot.category ? `<span class="shrink-0 text-[10px] font-semibold px-2 py-1 rounded-full bg-palette-tofu border border-palette-cream">${escapeHtml(spot.category)}</span>` : ""}
                 </div>
 
-                <!-- Media gallery -->
                 ${images.length > 0 ? `
                 <div class="relative">
                     <div class="media-gallery flex overflow-x-auto snap-x snap-mandatory">
@@ -251,15 +103,8 @@
                             ${img.isMenu ? `<span class="absolute top-2 left-2 bg-palette-matcha text-white text-[10px] font-bold px-2 py-1 rounded-full">📋 Ảnh Menu / Bảng Giá</span>` : ""}
                         </div>`).join("")}
                     </div>
-                    ${images.length > 1 ? `
-                    <button type="button" class="gallery-prev absolute left-2 top-1/2 -translate-y-1/2 w-7 h-7 bg-white/90 rounded-full shadow text-sm flex items-center justify-center">‹</button>
-                    <button type="button" class="gallery-next absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 bg-white/90 rounded-full shadow text-sm flex items-center justify-center">›</button>
-                    <div class="gallery-dots absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
-                        ${images.map(() => `<span class="w-1.5 h-1.5 rounded-full bg-white/50"></span>`).join("")}
-                    </div>` : ""}
                 </div>` : ""}
 
-                <!-- Spot info -->
                 <div class="p-4 space-y-3 text-xs">
                     <div>
                         <h2 class="font-bold text-base">${escapeHtml(spot.name)}</h2>
@@ -280,7 +125,6 @@
                     </div>` : ""}
                 </div>
 
-                <!-- Post actions -->
                 <div class="flex items-center gap-2 px-4 pb-4 pt-1 border-t border-palette-cream">
                     <a href="index.html?spotId=${spot.id}" class="flex-1 text-center text-xs font-bold text-palette-matcha border border-palette-cream rounded-lg py-2 hover:bg-palette-tofu transition">📍 Xem trên Bản Đồ</a>
                     <button type="button" class="report-btn flex-1 text-xs font-bold text-palette-yolk border border-palette-yolk/30 rounded-lg py-2 hover:bg-palette-yolk/10 transition" data-spot-id="${spot.id}">🚩 Báo Cáo</button>
@@ -290,8 +134,6 @@
         }
 
         function attachCardListeners() {
-            document.querySelectorAll(".media-gallery").forEach(setupGallery);
-
             document.querySelectorAll(".report-btn").forEach((btn) => {
                 btn.addEventListener("click", () => openReportModal(btn.dataset.spotId));
             });
@@ -301,31 +143,6 @@
             });
         }
 
-        // ---------------------------------------------------------------
-        // Swipeable gallery (scroll-snap + prev/next + dots, no library)
-        // ---------------------------------------------------------------
-        function setupGallery(gallery) {
-            const wrapper = gallery.parentElement;
-            const prevBtn = wrapper.querySelector(".gallery-prev");
-            const nextBtn = wrapper.querySelector(".gallery-next");
-            const dots = wrapper.querySelectorAll(".gallery-dots span");
-
-            function updateDots() {
-                if (!dots.length) return;
-                const index = Math.round(gallery.scrollLeft / gallery.clientWidth);
-                dots.forEach((dot, i) => {
-                    dot.className = `w-1.5 h-1.5 rounded-full ${i === index ? "bg-white" : "bg-white/50"}`;
-                });
-            }
-
-            prevBtn?.addEventListener("click", () => gallery.scrollBy({ left: -gallery.clientWidth, behavior: "smooth" }));
-            nextBtn?.addEventListener("click", () => gallery.scrollBy({ left: gallery.clientWidth, behavior: "smooth" }));
-            gallery.addEventListener("scroll", () => requestAnimationFrame(updateDots));
-        }
-
-        // ---------------------------------------------------------------
-        // Report modal
-        // ---------------------------------------------------------------
         function openReportModal(spotId) {
             if (!currentUser) {
                 window.location.href = "login.html";
@@ -333,67 +150,23 @@
             }
             currentReportSpotId = spotId;
             document.querySelectorAll('input[name="reportReason"]').forEach((r) => (r.checked = false));
-            document.getElementById("reportError").classList.add("hidden");
-            document.getElementById("reportModal").classList.remove("hidden");
+            document.getElementById("reportError")?.classList.add("hidden");
+            document.getElementById("reportModal")?.classList.remove("hidden");
         }
 
         window.closeReportModal = function () {
-            document.getElementById("reportModal").classList.add("hidden");
+            document.getElementById("reportModal")?.classList.add("hidden");
             currentReportSpotId = null;
         };
 
-        document.getElementById("reportForm").addEventListener("submit", async (e) => {
-            e.preventDefault();
-            const selected = document.querySelector('input[name="reportReason"]:checked');
-            const reportError = document.getElementById("reportError");
-
-            if (!selected) {
-                reportError.textContent = "Vui lòng chọn một lý do.";
-                reportError.classList.remove("hidden");
-                return;
-            }
-
-            const submitBtn = document.getElementById("reportSubmitBtn");
-            submitBtn.disabled = true;
-            submitBtn.textContent = "Đang gửi...";
-
-            const { error } = await reportItem("spot", currentReportSpotId, selected.value);
-
-            submitBtn.disabled = false;
-            submitBtn.textContent = "Gửi Báo Cáo";
-
-            if (error) {
-                reportError.textContent = "Không thể gửi báo cáo: " + error.message;
-                reportError.classList.remove("hidden");
-                return;
-            }
-
-            window.closeReportModal();
-            showToast("Đã gửi báo cáo. Cảm ơn bạn!");
-        });
-
-        // ---------------------------------------------------------------
-        // Delete (owner-only — button is only rendered when canDelete is true,
-        // and Supabase RLS double-checks created_by = auth.uid() server-side)
-        // ---------------------------------------------------------------
         async function handleDeleteSpot(spotId) {
             if (!confirm("Xóa bài đăng này? Hành động không thể hoàn tác.")) return;
-            const { error } = await deleteItem("spot", spotId);
-            if (error) {
-                alert("Không thể xóa: " + error.message);
-                return;
+            try {
+                await deleteItem("spot", spotId);
+                loadFeed();
+            } catch (err) {
+                alert("Không thể xóa: " + err.message);
             }
-            loadFeed();
-        }
-
-        // ---------------------------------------------------------------
-        // Small helpers
-        // ---------------------------------------------------------------
-        function showToast(message) {
-            const toast = document.getElementById("toast");
-            toast.textContent = message;
-            toast.classList.remove("hidden");
-            setTimeout(() => toast.classList.add("hidden"), 2500);
         }
 
         function escapeHtml(str) {
@@ -419,6 +192,10 @@
             if (days < 7) return `${days} ngày trước`;
             return new Date(dateStr).toLocaleDateString("vi-VN", { year: "numeric", month: "long", day: "numeric" });
         }
+
+        if (document.readyState === "loading") {
+            document.addEventListener("DOMContentLoaded", init);
+        } else {
+            init();
+        }
     </script>
-</body>
-</html>
