@@ -114,7 +114,7 @@
 
     <!-- MODULE SCRIPT -->
     <script type="module">
-        import { getCurrentUser, fetchSpots, reportItem, deleteItem } from './js/supabase.js?v=5';
+        import { getCurrentUser, fetchSpots, reportItem, deleteItem } from './js/supabase.js?v=6';
 
         let currentUser = null;
         let currentReportSpotId = null;
@@ -160,8 +160,13 @@
             list?.classList.add("hidden");
 
             try {
-                const spotsData = await fetchSpots();
-                const spots = Array.isArray(spotsData) ? spotsData : (spotsData?.data || []);
+                const spotsResult = await fetchSpots();
+                let spots = [];
+                if (Array.isArray(spotsResult)) {
+                    spots = spotsResult;
+                } else if (spotsResult && Array.isArray(spotsResult.data)) {
+                    spots = spotsResult.data;
+                }
 
                 skeleton?.classList.add("hidden");
 
@@ -180,7 +185,7 @@
                 skeleton?.classList.add("hidden");
                 if (list) {
                     list.classList.remove("hidden");
-                    list.innerHTML = `<p class="text-xs text-rose-600 text-center py-10">Không tải được bảng tin: ${escapeHtml(err.message)}</p>`;
+                    list.innerHTML = `<p class="text-xs text-rose-600 text-center py-10">Không tải được bảng tin: ${escapeHtml(err.message || String(err))}</p>`;
                 }
             }
         }
@@ -207,7 +212,6 @@
 
             return `
             <article class="bg-white border border-palette-cream rounded-2xl shadow-sm overflow-hidden">
-                <!-- Post header -->
                 <div class="flex items-center gap-3 p-4">
                     <div class="w-10 h-10 shrink-0 rounded-full bg-palette-ember text-white flex items-center justify-center font-bold">${initial}</div>
                     <div class="min-w-0 flex-grow">
@@ -220,7 +224,6 @@
                     ${spot.category ? `<span class="shrink-0 text-[10px] font-semibold px-2 py-1 rounded-full bg-palette-tofu border border-palette-cream">${escapeHtml(spot.category)}</span>` : ""}
                 </div>
 
-                <!-- Media gallery -->
                 ${images.length > 0 ? `
                 <div class="relative">
                     <div class="media-gallery flex overflow-x-auto snap-x snap-mandatory">
@@ -238,7 +241,6 @@
                     </div>` : ""}
                 </div>` : ""}
 
-                <!-- Spot info -->
                 <div class="p-4 space-y-3 text-xs">
                     <div>
                         <h2 class="font-bold text-base">${escapeHtml(spot.name)}</h2>
@@ -259,7 +261,6 @@
                     </div>` : ""}
                 </div>
 
-                <!-- Post actions -->
                 <div class="flex items-center gap-2 px-4 pb-4 pt-1 border-t border-palette-cream">
                     <a href="index.html?spotId=${spot.id}" class="flex-1 text-center text-xs font-bold text-palette-matcha border border-palette-cream rounded-lg py-2 hover:bg-palette-tofu transition">📍 Xem trên Bản Đồ</a>
                     <button type="button" class="report-btn flex-1 text-xs font-bold text-palette-yolk border border-palette-yolk/30 rounded-lg py-2 hover:bg-palette-yolk/10 transition" data-spot-id="${spot.id}">🚩 Báo Cáo</button>
