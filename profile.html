@@ -4,9 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Trang Cá Nhân - ChùaLángEats</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Preconnect First -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -38,7 +43,7 @@
             <div class="flex items-center gap-4 text-xs font-semibold">
                 <a href="feed.html" class="hover:text-palette-ember">📱 Feed</a>
                 <a href="add-spot.html" class="hover:text-palette-ember">➕ Thêm Quán</a>
-                <button onclick="handleLogout()" class="bg-palette-cream text-palette-ember px-3 py-1.5 rounded-lg border border-palette-yolk/30 hover:bg-palette-yolk/20 transition">Đăng Xuất</button>
+                <button type="button" onclick="handleLogout()" class="bg-palette-cream text-palette-ember px-3 py-1.5 rounded-lg border border-palette-yolk/30 hover:bg-palette-yolk/20 transition">Đăng Xuất</button>
             </div>
         </div>
     </header>
@@ -58,13 +63,13 @@
                     <span id="displayBadge" class="inline-block mt-1 text-xs font-semibold px-3 py-1 rounded-full bg-palette-yolk/15 text-palette-yolk border border-palette-yolk/30">—</span>
                     <p id="joinedDate" class="text-xs text-palette-matcha/60 mt-2">—</p>
                 </div>
-                <button onclick="toggleEditProfile()" class="shrink-0 text-xs font-bold text-palette-matcha border border-palette-cream rounded-lg px-3 py-2 hover:bg-palette-tofu transition">Chỉnh Sửa</button>
+                <button type="button" onclick="toggleEditProfile()" class="shrink-0 text-xs font-bold text-palette-matcha border border-palette-cream rounded-lg px-3 py-2 hover:bg-palette-tofu transition">Chỉnh Sửa</button>
             </div>
 
             <!-- Edit mode -->
             <form id="editProfileForm" onsubmit="handleProfileUpdate(event)" class="hidden space-y-4 text-xs">
                 <div>
-                    <label class="block font-semibold mb-1">Trường học / Huy hiệu Badge</label>
+                    <label for="editBadgeSelect" class="block font-semibold mb-1">Trường học / Huy hiệu Badge</label>
                     <select id="editBadgeSelect" class="w-full bg-palette-tofu border border-palette-cream rounded-xl p-3 font-medium focus:ring-2 focus:ring-palette-ember focus:outline-none">
                         <option value="FTUer Verified">Sinh viên Ngoại Thương (FTUer)</option>
                         <option value="DAVer Verified">Sinh viên Ngoại Giao (DAVer)</option>
@@ -83,8 +88,8 @@
         <!-- ACTIVITY -->
         <div class="bg-white border border-palette-cream rounded-2xl shadow-sm p-5 sm:p-6">
             <div class="flex border-b border-palette-cream mb-4">
-                <button id="tabSpots" onclick="switchProfileTab('spots')" class="flex-1 py-2 font-bold text-sm text-palette-ember border-b-2 border-palette-ember transition">Quán Của Tôi</button>
-                <button id="tabReviews" onclick="switchProfileTab('reviews')" class="flex-1 py-2 font-bold text-sm text-palette-matcha/50 hover:text-palette-matcha transition">Đánh Giá Của Tôi</button>
+                <button id="tabSpots" type="button" onclick="switchProfileTab('spots')" class="flex-1 py-2 font-bold text-sm text-palette-ember border-b-2 border-palette-ember transition">Quán Của Tôi</button>
+                <button id="tabReviews" type="button" onclick="switchProfileTab('reviews')" class="flex-1 py-2 font-bold text-sm text-palette-matcha/50 hover:text-palette-matcha transition">Đánh Giá Của Tôi</button>
             </div>
 
             <div id="panelSpots" class="space-y-3">
@@ -104,7 +109,7 @@
     </footer>
 
     <script type="module">
-        import { supabaseClient, getCurrentUser, signOutUser, deleteItem } from './js/supabase.js?v=5';
+        import { supabase, getCurrentUser, signOutUser, deleteItem } from './supabase.js';
 
         let currentUser = null;
         let currentProfile = null;
@@ -112,16 +117,16 @@
         init();
 
         async function init() {
-            const user = await getCurrentUser();
+            const { user, profile } = await getCurrentUser();
 
-            if (!user) {
+            if (!user || !user.id) {
                 window.location.href = "login.html";
                 return;
             }
 
             currentUser = user;
-            currentProfile = user.profile || {};
-            renderProfile(currentProfile, user);
+            currentProfile = profile || {};
+            renderProfile(currentProfile, currentUser);
             loadMySpots();
             loadMyReviews();
         }
@@ -129,43 +134,61 @@
         function renderProfile(profile, user) {
             const username = profile?.username || user?.user_metadata?.username || "Thành viên";
             const badge = profile?.badge || user?.user_metadata?.badge || "Chưa xác thực";
-            
-            document.getElementById("avatarInitial").textContent = username.charAt(0).toUpperCase();
-            document.getElementById("displayUsername").textContent = username;
-            document.getElementById("displayBadge").textContent = badge;
-            document.getElementById("editBadgeSelect").value = badge;
+
+            const avatarElem = document.getElementById("avatarInitial");
+            if (avatarElem) avatarElem.textContent = username.charAt(0).toUpperCase();
+
+            const nameElem = document.getElementById("displayUsername");
+            if (nameElem) nameElem.textContent = username;
+
+            const badgeElem = document.getElementById("displayBadge");
+            if (badgeElem) badgeElem.textContent = badge;
+
+            const badgeSelect = document.getElementById("editBadgeSelect");
+            if (badgeSelect) badgeSelect.value = badge;
 
             const joinedRaw = profile?.created_at || user?.created_at;
             const joined = joinedRaw
                 ? new Date(joinedRaw).toLocaleDateString("vi-VN", { year: "numeric", month: "long", day: "numeric" })
                 : "—";
-            document.getElementById("joinedDate").textContent = `Tham gia từ ${joined}`;
+            const joinedElem = document.getElementById("joinedDate");
+            if (joinedElem) joinedElem.textContent = `Tham gia từ ${joined}`;
         }
 
         window.toggleEditProfile = function() {
-            document.getElementById("profileDisplay").classList.toggle("hidden");
-            document.getElementById("editProfileForm").classList.toggle("hidden");
+            document.getElementById("profileDisplay")?.classList.toggle("hidden");
+            document.getElementById("editProfileForm")?.classList.toggle("hidden");
         };
 
         window.handleProfileUpdate = async function(e) {
             e.preventDefault();
             const alertBox = document.getElementById("profileAlert");
-            const newBadge = document.getElementById("editBadgeSelect").value;
+            const newBadge = document.getElementById("editBadgeSelect")?.value;
 
-            const { error } = await supabaseClient
+            if (!currentUser || !currentUser.id) {
+                alert("Vui lòng đăng nhập lại.");
+                window.location.href = "login.html";
+                return;
+            }
+
+            const { error } = await supabase
                 .from("profiles")
                 .update({ badge: newBadge })
                 .eq("id", currentUser.id);
 
-            alertBox.classList.remove("hidden");
+            if (alertBox) alertBox.classList.remove("hidden");
             if (error) {
-                alertBox.textContent = "Không thể lưu: " + error.message;
-                alertBox.className = "text-xs p-3 rounded-xl mb-4 bg-rose-100 text-rose-700 font-semibold";
+                if (alertBox) {
+                    alertBox.textContent = "Không thể lưu: " + error.message;
+                    alertBox.className = "text-xs p-3 rounded-xl mb-4 bg-rose-100 text-rose-700 font-semibold";
+                }
             } else {
                 currentProfile.badge = newBadge;
                 renderProfile(currentProfile, currentUser);
-                alertBox.textContent = "Đã lưu thay đổi!";
-                alertBox.className = "text-xs p-3 rounded-xl mb-4 bg-emerald-100 text-emerald-800 font-semibold";
+                if (alertBox) {
+                    alertBox.textContent = "Đã lưu thay đổi!";
+                    alertBox.className = "text-xs p-3 rounded-xl mb-4 bg-emerald-100 text-emerald-800 font-semibold";
+                }
                 window.toggleEditProfile();
             }
         };
@@ -180,21 +203,28 @@
             const inactiveClass = "flex-1 py-2 font-bold text-sm text-palette-matcha/50 hover:text-palette-matcha transition";
 
             if (type === "spots") {
-                panelSpots.classList.remove("hidden");
-                panelReviews.classList.add("hidden");
-                tabSpots.className = activeClass;
-                tabReviews.className = inactiveClass;
+                panelSpots?.classList.remove("hidden");
+                panelReviews?.classList.add("hidden");
+                if (tabSpots) tabSpots.className = activeClass;
+                if (tabReviews) tabReviews.className = inactiveClass;
             } else {
-                panelReviews.classList.remove("hidden");
-                panelSpots.classList.add("hidden");
-                tabReviews.className = activeClass.replace("border-palette-ember", "border-palette-matcha").replace("text-palette-ember", "text-palette-matcha");
-                tabSpots.className = inactiveClass;
+                panelReviews?.classList.remove("hidden");
+                panelSpots?.classList.add("hidden");
+                if (tabReviews) tabReviews.className = activeClass.replace("border-palette-ember", "border-palette-matcha").replace("text-palette-ember", "text-palette-matcha");
+                if (tabSpots) tabSpots.className = inactiveClass;
             }
         };
 
         async function loadMySpots() {
             const container = document.getElementById("panelSpots");
-            const { data, error } = await supabaseClient
+            if (!container) return;
+
+            if (!currentUser || !currentUser.id) {
+                container.innerHTML = `<p class="text-xs text-palette-matcha/50 text-center py-6">Vui lòng đăng nhập để xem danh sách quán.</p>`;
+                return;
+            }
+
+            const { data, error } = await supabase
                 .from("spots")
                 .select("*")
                 .eq("created_by", currentUser.id)
@@ -223,14 +253,21 @@
                             ${spot.status === "approved" ? "Đã duyệt" : "Chờ duyệt"}
                         </span>
                     </div>
-                    <button onclick="removeSpot(${spot.id})" class="shrink-0 text-xs font-semibold text-rose-600 hover:text-rose-700 px-2 py-1">Xóa</button>
+                    <button type="button" onclick="removeSpot(${spot.id})" class="shrink-0 text-xs font-semibold text-rose-600 hover:text-rose-700 px-2 py-1">Xóa</button>
                 </div>
             `).join("");
         }
 
         async function loadMyReviews() {
             const container = document.getElementById("panelReviews");
-            const { data, error } = await supabaseClient
+            if (!container) return;
+
+            if (!currentUser || !currentUser.id) {
+                container.innerHTML = `<p class="text-xs text-palette-matcha/50 text-center py-6">Vui lòng đăng nhập để xem đánh giá.</p>`;
+                return;
+            }
+
+            const { data, error } = await supabase
                 .from("reviews")
                 .select("*, spots ( name )")
                 .eq("user_id", currentUser.id)
@@ -257,37 +294,33 @@
                         <p class="text-xs text-palette-matcha/60">Chất lượng ${review.quality_rating ?? "–"}/5 · Vệ sinh ${review.hygiene_rating ?? "–"}/5</p>
                         ${review.comment ? `<p class="text-xs mt-1">${escapeHtml(review.comment)}</p>` : ""}
                     </div>
-                    <button onclick="removeReview(${review.id})" class="shrink-0 text-xs font-semibold text-rose-600 hover:text-rose-700 px-2 py-1">Xóa</button>
+                    <button type="button" onclick="removeReview(${review.id})" class="shrink-0 text-xs font-semibold text-rose-600 hover:text-rose-700 px-2 py-1">Xóa</button>
                 </div>
             `).join("");
         }
 
         window.removeSpot = async function(id) {
             if (!confirm("Xóa quán này? Hành động không thể hoàn tác.")) return;
-            try {
-                await deleteItem("spot", id);
+            const { error } = await deleteItem("spot", id);
+            if (error) {
+                alert("Không thể xóa: " + error.message);
+            } else {
                 loadMySpots();
-            } catch (err) {
-                alert("Không thể xóa: " + err.message);
             }
         };
 
         window.removeReview = async function(id) {
             if (!confirm("Xóa đánh giá này?")) return;
-            try {
-                await deleteItem("review", id);
+            const { error } = await deleteItem("review", id);
+            if (error) {
+                alert("Không thể xóa: " + error.message);
+            } else {
                 loadMyReviews();
-            } catch (err) {
-                alert("Không thể xóa: " + err.message);
             }
         };
 
         window.handleLogout = async function() {
-            try {
-                await signOutUser();
-            } catch (err) {
-                console.error(err);
-            }
+            await signOutUser();
             window.location.href = "login.html";
         };
 
