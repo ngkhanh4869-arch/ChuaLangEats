@@ -51,7 +51,9 @@
             <div class="flex items-center justify-between h-16">
                 <!-- Logo & Campus Tag -->
                 <div class="flex items-center gap-3">
-                    <img src="assets/logo.png" alt="ChùaLángEats Logo" class="w-10 h-10 object-contain rounded-xl shadow-md">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-rose-500 to-amber-500 flex items-center justify-center text-white text-xl font-black shadow-md shadow-rose-200">
+                        <i class="fa-solid font-bold fa-utensils"></i>
+                    </div>
                     <div>
                         <div class="flex items-center gap-2">
                             <h1 class="text-lg font-bold tracking-tight text-slate-900 leading-none">ChùaLáng<span class="text-rose-600">Eats</span></h1>
@@ -311,7 +313,9 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4">
             <div class="flex flex-col md:flex-row items-center justify-between gap-4">
                 <div class="flex items-center gap-2">
-                    <img src="assets/logo.png" alt="Chùa Láng Eats Logo" class="w-7 h-7 object-contain rounded-lg">
+                    <div class="w-7 h-7 rounded-lg bg-rose-600 text-white flex items-center justify-center font-bold">
+                        <i class="fa-solid fa-utensils text-xs"></i>
+                    </div>
                     <span class="font-bold text-white text-sm">Chùa Láng Eats</span>
                 </div>
                 <p class="text-center md:text-right text-slate-400">
@@ -641,6 +645,9 @@
             markers = [];
 
             items.forEach(v => {
+                // Spots added before the lat/lng migration (or missing a pin for
+                // any other reason) have no real coordinates — skip rather than
+                // guess, so the map never shows a pin at the wrong address.
                 if (v.lat == null || v.lng == null) return;
 
                 const marker = L.marker([v.lat, v.lng]).addTo(map);
@@ -657,6 +664,9 @@
             });
         }
 
+        // 5b. Deep-link support: feed.html's "📍 Xem trên Bản Đồ" button sends
+        // visitors to index.html?spotId=<id> — open the map, center on that
+        // spot's pin, and pop its popup open.
         function focusSpotFromQuery() {
             const spotId = new URLSearchParams(window.location.search).get("spotId");
             if (!spotId) return;
@@ -672,6 +682,7 @@
                 map.invalidateSize();
 
                 if (vendor.lat == null || vendor.lng == null) {
+                    // No pin to show yet — at least open the full detail view.
                     openDetailModal(id);
                     return;
                 }
@@ -783,7 +794,7 @@
 
             } catch (err) {
                 alert("Đã xảy ra lỗi: " + err.message);
-            } font-bold {
+            } finally {
                 if (submitBtn) {
                     submitBtn.disabled = false;
                     submitBtn.innerText = "Gửi Đánh Giá Ngay";
