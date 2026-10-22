@@ -7,6 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script>
         tailwind.config = {
             theme: {
@@ -101,6 +102,18 @@
                     <input type="number" id="distanceMinutes" placeholder="3" class="w-full bg-palette-tofu border border-palette-cream rounded-xl p-3 font-medium focus:ring-2 focus:ring-palette-ember focus:outline-none">
                 </div>
 
+                <!-- Location picker -->
+                <div>
+                    <label class="block font-semibold mb-1">Vị Trí Trên Bản Đồ *</label>
+                    <p class="text-[11px] text-palette-matcha/50 mb-2">Bấm vào bản đồ để đánh dấu đúng vị trí quán, hoặc dùng vị trí hiện tại của bạn. Có thể kéo ghim để chỉnh lại.</p>
+                    <div class="flex items-center justify-between mb-2">
+                        <span id="locationStatus" class="text-[11px] font-semibold text-palette-matcha/60">Chưa chọn vị trí</span>
+                        <button type="button" id="useCurrentLocationBtn" class="text-[11px] font-bold text-palette-ember hover:underline">📍 Dùng vị trí hiện tại</button>
+                    </div>
+                    <div id="locationPicker" class="rounded-xl overflow-hidden border border-palette-cream" style="height: 220px;"></div>
+                    <p id="locationError" class="hidden text-rose-600 text-[11px] mt-1 font-semibold"></p>
+                </div>
+
                 <div>
                     <label class="block font-semibold mb-1">Mô Tả / Review Ngắn</label>
                     <textarea id="description" rows="3" placeholder="Quán có gì đặc biệt? Giá sinh viên không?" class="w-full bg-palette-tofu border border-palette-cream rounded-xl p-3 font-medium focus:ring-2 focus:ring-palette-ember focus:outline-none"></textarea>
@@ -154,14 +167,19 @@
         <p>© 2026 Chùa Láng Student Community</p>
     </footer>
 
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script type="module">
-        import { getCurrentUser, signOutUser, createSpot } from './js/supabase.js?v=5';
+        import { getCurrentUser, signOutUser, createSpot } from './js/supabase.js?v=6';
 
         let foodFiles = [];
         let menuFile = null;
+        let pickedLat = null;
+        let pickedLng = null;
+        let locationMap = null;
+        let locationMarker = null;
 
         async function init() {
-            const user = await getCurrentUser();
+            const { user } = await getCurrentUser();
             if (!user) {
                 window.location.href = "login.html";
                 return;
@@ -246,11 +264,73 @@
             menuPreviewWrap.classList.add("hidden");
         });
 
+        // ---------------------------------------------------------------
+        // Location picker (click-to-pin / drag / "use current location")
+        // ---------------------------------------------------------------
+        function initLocationPicker() {
+            locationMap = L.map("locationPicker").setView([21.0222, 105.8028], 16);
+
+            L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+                maxZoom: 19,
+                attribution: "© OpenStreetMap",
+            }).addTo(locationMap);
+
+            locationMap.on("click", (e) => setPickedLocation(e.latlng.lat, e.latlng.lng));
+        }
+
+        function setPickedLocation(lat, lng) {
+            pickedLat = lat;
+            pickedLng = lng;
+
+            if (locationMarker) {
+                locationMarker.setLatLng([lat, lng]);
+            } else {
+                locationMarker = L.marker([lat, lng], { draggable: true }).addTo(locationMap);
+                locationMarker.on("dragend", () => {
+                    const pos = locationMarker.getLatLng();
+                    pickedLat = pos.lat;
+                    pickedLng = pos.lng;
+                    updateLocationStatus();
+                });
+            }
+
+            updateLocationStatus();
+            document.getElementById("locationError")?.classList.add("hidden");
+        }
+
+        function updateLocationStatus() {
+            const statusEl = document.getElementById("locationStatus");
+            if (!statusEl) return;
+            statusEl.textContent = `Đã chọn: ${pickedLat.toFixed(5)}, ${pickedLng.toFixed(5)}`;
+            statusEl.className = "text-[11px] font-semibold text-emerald-700";
+        }
+
+        initLocationPicker();
+
+        document.getElementById("useCurrentLocationBtn")?.addEventListener("click", () => {
+            if (!navigator.geolocation) {
+                alert("Trình duyệt của bạn không hỗ trợ định vị.");
+                return;
+            }
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    const { latitude, longitude } = pos.coords;
+                    locationMap.setView([latitude, longitude], 17);
+                    setPickedLocation(latitude, longitude);
+                },
+                (err) => {
+                    alert("Không thể lấy vị trí hiện tại: " + err.message);
+                }
+            );
+        });
+
         document.getElementById("addSpotForm").addEventListener("submit", async (e) => {
             e.preventDefault();
 
             foodError.classList.add("hidden");
             menuError.classList.add("hidden");
+            const locationError = document.getElementById("locationError");
+            locationError?.classList.add("hidden");
             const alertBox = document.getElementById("formAlert");
             alertBox.classList.add("hidden");
 
@@ -259,6 +339,14 @@
             if (foodFiles.length < 1) {
                 foodError.textContent = "Vui lòng chọn ít nhất 1 ảnh món ăn.";
                 foodError.classList.remove("hidden");
+                hasError = true;
+            }
+
+            if (pickedLat == null || pickedLng == null) {
+                if (locationError) {
+                    locationError.textContent = "Vui lòng chọn vị trí quán trên bản đồ.";
+                    locationError.classList.remove("hidden");
+                }
                 hasError = true;
             }
 
@@ -289,12 +377,20 @@
                 minPrice,
                 maxPrice,
                 distanceMinutes: Number(document.getElementById("distanceMinutes").value) || 5,
+                lat: pickedLat,
+                lng: pickedLng,
                 description: document.getElementById("description").value.trim(),
                 tags,
             };
 
             try {
-                await createSpot(spotData, foodFiles, menuFile);
+                const { error } = await createSpot(spotData, foodFiles, menuFile);
+                if (error) {
+                    showAlert("Không thể tạo quán: " + error.message, "error");
+                    submitBtn.disabled = false;
+                    submitBtnText.textContent = "Đăng Quán Ăn";
+                    return;
+                }
                 showAlert("Tạo quán thành công! Đang chuyển hướng...", "success");
                 setTimeout(() => (window.location.href = "profile.html"), 1500);
             } catch (err) {
