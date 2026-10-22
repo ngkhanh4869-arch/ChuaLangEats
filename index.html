@@ -338,7 +338,7 @@
 
     <!-- MAIN JAVASCRIPT APP LOGIC CONNECTED TO SUPABASE -->
     <script type="module">
-        import { getCurrentUser, fetchSpots, fetchReviews, createReview } from './supabase.js';
+        import { getCurrentUser, fetchSpots, fetchReviews, createReview } from './js/supabase.js';
 
         // STATE VARIABLES
         let vendors = [];
@@ -354,6 +354,7 @@
         window.addEventListener('DOMContentLoaded', async () => {
             await checkAuth();
             await loadSpotsFromSupabase();
+            focusSpotFromQuery();
         });
 
         // 1. Auth Status Check
@@ -449,8 +450,8 @@
                     priceText: priceText,
                     address: spot.address || "Chùa Láng, Đống Đa, Hà Nội",
                     distanceMinutes: spot.distance_minutes || 5,
-                    lat: spot.lat || 21.0222 + (Math.random() - 0.5) * 0.004,
-                    lng: spot.lng || 105.8028 + (Math.random() - 0.5) * 0.004,
+                    lat: typeof spot.lat === 'number' ? spot.lat : null,
+                    lng: typeof spot.lng === 'number' ? spot.lng : null,
                     hygieneScore: parseFloat(hygieneScore),
                     overallRating: parseFloat(overallRating),
                     reviewCount: reviewCount,
@@ -644,7 +645,13 @@
             markers = [];
 
             items.forEach(v => {
+                // Spots added before the lat/lng migration (or missing a pin for
+                // any other reason) have no real coordinates — skip rather than
+                // guess, so the map never shows a pin at the wrong address.
+                if (v.lat == null || v.lng == null) return;
+
                 const marker = L.marker([v.lat, v.lng]).addTo(map);
+                marker._chualangSpotId = v.id;
                 marker.bindPopup(`
                     <div class="text-xs p-1 font-sans">
                         <strong class="text-rose-600 block text-sm">${escapeHtml(v.name)}</strong>
@@ -655,6 +662,36 @@
                 `);
                 markers.push(marker);
             });
+        }
+
+        // 5b. Deep-link support: feed.html's "📍 Xem trên Bản Đồ" button sends
+        // visitors to index.html?spotId=<id> — open the map, center on that
+        // spot's pin, and pop its popup open.
+        function focusSpotFromQuery() {
+            const spotId = new URLSearchParams(window.location.search).get("spotId");
+            if (!spotId) return;
+
+            const id = parseInt(spotId, 10);
+            const vendor = vendors.find((v) => v.id === id);
+            if (!vendor) return;
+
+            if (!isMapViewOpen) toggleMapView();
+
+            setTimeout(() => {
+                if (!map) return;
+                map.invalidateSize();
+
+                if (vendor.lat == null || vendor.lng == null) {
+                    // No pin to show yet — at least open the full detail view.
+                    openDetailModal(id);
+                    return;
+                }
+
+                map.setView([vendor.lat, vendor.lng], 18);
+                const marker = markers.find((m) => m._chualangSpotId === id);
+                marker?.openPopup();
+                document.getElementById("mapContainer")?.scrollIntoView({ behavior: "smooth", block: "start" });
+            }, 250);
         }
 
         // 6. Modal Controls & Review Submission
