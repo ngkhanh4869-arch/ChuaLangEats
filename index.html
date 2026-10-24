@@ -20,14 +20,43 @@
             theme: {
                 extend: {
                     colors: {
-                        brand: {
-                            50: '#fff1f2',
-                            100: '#ffe4e6',
-                            500: '#f43f5e',
-                            600: '#e11d48',
-                            700: '#be123c',
+                        // Same brand tokens as login.html/profile.html/add-spot.html/feed.html
+                        // (palette.ember/cream/matcha/yolk/tofu), extended with generated
+                        // 50-900 shade ramps so this page's existing tint/shade usage
+                        // (light backgrounds, hover states, etc.) keeps working but now
+                        // renders in the real brand red/gold instead of stock Tailwind
+                        // rose/amber.
+                        palette: {
+                            ember: {
+                                DEFAULT: '#EE3F24',
+                                50: '#feeeec',
+                                100: '#fcdad4',
+                                200: '#f8b4aa',
+                                300: '#f48371',
+                                400: '#f05138',
+                                500: '#ee3f24',
+                                600: '#d82b11',
+                                700: '#ae230d',
+                                800: '#831a0a',
+                                900: '#5d1307',
+                            },
+                            cream: '#FFEFCB',
+                            matcha: '#023820',
+                            yolk: {
+                                DEFAULT: '#F9A11B',
+                                50: '#fef7eb',
+                                100: '#feedd2',
+                                200: '#fddaa6',
+                                300: '#fbc26a',
+                                400: '#faa92e',
+                                500: '#f9a11b',
+                                600: '#e58d06',
+                                700: '#b87105',
+                                800: '#8c5604',
+                                900: '#643d03',
+                            },
+                            tofu: '#FFF4E6',
                         },
-                        ftu: '#991b1b', // FTU Deep Red accent
                     },
                     fontFamily: {
                         sans: ['Inter', 'sans-serif'],
@@ -53,13 +82,13 @@
             <div class="flex items-center justify-between h-16">
                 <!-- Logo & Campus Tag -->
                 <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-rose-500 to-amber-500 flex items-center justify-center shadow-md shadow-rose-200 p-2">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-palette-ember-500 to-palette-yolk-500 flex items-center justify-center shadow-md shadow-palette-ember-200 p-2">
                         <img src="assets/logo-mark.png" alt="ChùaLángEats" class="w-full h-full object-contain">
                     </div>
                     <div>
                         <div class="flex items-center gap-2">
-                            <h1 class="text-lg font-bold tracking-tight text-slate-900 leading-none">ChùaLáng<span class="text-rose-600">Eats</span></h1>
-                            <span class="bg-rose-100 text-rose-800 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">FTU • DAV • VYA</span>
+                            <h1 class="text-lg font-bold tracking-tight text-slate-900 leading-none">ChùaLáng<span class="text-palette-ember-600">Eats</span></h1>
+                            <span class="bg-palette-ember-100 text-palette-ember-800 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">FTU • DAV • VYA</span>
                         </div>
                         <p class="text-xs text-slate-500 mt-0.5">Tìm quán ngon, rẻ, sạch quanh Chùa Láng</p>
                     </div>
@@ -68,16 +97,16 @@
                 <!-- Action Buttons & User Header -->
                 <div class="flex items-center gap-2 sm:gap-3">
                     <a href="add-spot.html" class="inline-flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs sm:text-sm font-semibold px-3 py-2 rounded-xl transition">
-                        <i class="fa-solid fa-plus text-rose-600"></i>
+                        <i class="fa-solid fa-plus text-palette-ember-600"></i>
                         <span class="hidden sm:inline">Thêm Quán</span>
                     </a>
-                    <button onclick="openReviewModal()" class="inline-flex items-center gap-2 bg-rose-600 hover:bg-rose-700 text-white text-xs sm:text-sm font-semibold px-3 sm:px-4 py-2 rounded-xl transition shadow-sm hover:shadow-rose-100">
+                    <button onclick="openReviewModal()" class="inline-flex items-center gap-2 bg-palette-ember-600 hover:bg-palette-ember-700 text-white text-xs sm:text-sm font-semibold px-3 sm:px-4 py-2 rounded-xl transition shadow-sm hover:shadow-palette-ember-100">
                         <i class="fa-solid fa-pen-to-square text-xs"></i>
                         <span class="hidden sm:inline">Viết Đánh Giá</span>
                         <span class="sm:hidden">Đánh giá</span>
                     </button>
                     <button onclick="toggleMapView()" id="mapToggleBtn" class="inline-flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs sm:text-sm font-semibold px-3 py-2 rounded-xl transition">
-                        <i class="fa-solid fa-map-location-dot text-rose-600"></i>
+                        <i class="fa-solid fa-map-location-dot text-palette-ember-600"></i>
                         <span class="hidden md:inline" id="mapToggleText">Xem Bản Đồ</span>
                     </button>
                     <div id="authArea" class="ml-1 sm:ml-2">
@@ -89,22 +118,22 @@
     </header>
 
     <!-- HERO BANNER / SPECIAL DEALS CAROUSEL -->
-    <section class="bg-gradient-to-r from-rose-600 via-rose-500 to-amber-500 text-white py-6 shadow-inner">
+    <section class="bg-gradient-to-r from-palette-ember-600 via-palette-ember-500 to-palette-yolk-500 text-white py-6 shadow-inner">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex flex-col md:flex-row items-center justify-between gap-4">
                 <div class="space-y-1 text-center md:text-left">
                     <div class="inline-flex items-center gap-1.5 bg-white/20 backdrop-blur-md px-2.5 py-0.5 rounded-full text-xs font-medium text-white mb-1">
-                        <i class="fa-solid fa-fire text-amber-300"></i>
+                        <i class="fa-solid fa-fire text-palette-yolk-300"></i>
                         <span>Combo Sinh Viên Tiết Kiệm</span>
                     </div>
                     <h2 class="text-xl sm:text-2xl font-extrabold tracking-tight">Xua tan nỗi lo bị dẹp xe đẩy cổng trường FTU & DAV!</h2>
-                    <p class="text-rose-100 text-xs sm:text-sm max-w-xl">Khám phá các quán ăn ngon trong ngõ hẻm Chùa Láng — Đã được xác thực giá &lt; 30k & chuẩn vệ sinh bởi FTUers.</p>
+                    <p class="text-palette-ember-100 text-xs sm:text-sm max-w-xl">Khám phá các quán ăn ngon trong ngõ hẻm Chùa Láng — Đã được xác thực giá &lt; 30k & chuẩn vệ sinh bởi FTUers.</p>
                 </div>
                 
                 <!-- Quick Hot Deals Widget -->
                 <div class="w-full md:w-auto flex items-center gap-2 overflow-x-auto pb-1 md:pb-0 custom-scrollbar">
                     <div class="bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 p-3 rounded-xl min-w-[200px] text-xs transition cursor-pointer" onclick="filterByPreset('under20k')">
-                        <div class="font-bold text-amber-300 flex items-center gap-1">
+                        <div class="font-bold text-palette-yolk-300 flex items-center gap-1">
                             <i class="fa-solid fa-bolt"></i> Siêu Rẻ &lt; 20K
                         </div>
                         <div class="text-white/90 font-medium text-[11px] mt-0.5">Bánh mì, Cơm nắm, Xôi ngõ 185</div>
@@ -128,15 +157,15 @@
             <!-- Search input -->
             <div class="relative">
                 <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3.5 text-slate-400 text-sm"></i>
-                <input type="text" id="searchInput" oninput="applyFilters()" placeholder="Tìm món ăn, tên quán hoặc ngõ (Ví dụ: Cơm tấm, Ngõ 121 Chùa Láng, Bún trộn...)" class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-rose-500 focus:bg-white transition">
+                <input type="text" id="searchInput" oninput="applyFilters()" placeholder="Tìm món ăn, tên quán hoặc ngõ (Ví dụ: Cơm tấm, Ngõ 121 Chùa Láng, Bún trộn...)" class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-palette-ember-500 focus:bg-white transition">
             </div>
 
             <!-- Filter Controls -->
             <div class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 text-xs">
                 <!-- Price Filter -->
                 <div>
-                    <label class="block font-semibold text-slate-600 mb-1"><i class="fa-solid fa-tag text-rose-500 mr-1"></i>Mức Giá Max</label>
-                    <select id="priceFilter" onchange="applyFilters()" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-rose-500">
+                    <label class="block font-semibold text-slate-600 mb-1"><i class="fa-solid fa-tag text-palette-ember-500 mr-1"></i>Mức Giá Max</label>
+                    <select id="priceFilter" onchange="applyFilters()" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-palette-ember-500">
                         <option value="all">Tất cả mức giá</option>
                         <option value="20">Dưới 20.000 VNĐ</option>
                         <option value="25">Dưới 25.000 VNĐ</option>
@@ -146,8 +175,8 @@
 
                 <!-- Distance / Walking Time -->
                 <div>
-                    <label class="block font-semibold text-slate-600 mb-1"><i class="fa-solid fa-person-walking text-rose-500 mr-1"></i>Khoảng cách từ Cổng FTU/DAV</label>
-                    <select id="distanceFilter" onchange="applyFilters()" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-rose-500">
+                    <label class="block font-semibold text-slate-600 mb-1"><i class="fa-solid fa-person-walking text-palette-ember-500 mr-1"></i>Khoảng cách từ Cổng FTU/DAV</label>
+                    <select id="distanceFilter" onchange="applyFilters()" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-palette-ember-500">
                         <option value="all">Mọi khoảng cách</option>
                         <option value="3">&lt; 3 phút đi bộ (&lt; 250m)</option>
                         <option value="5">&lt; 5 phút đi bộ (&lt; 400m)</option>
@@ -157,8 +186,8 @@
 
                 <!-- Hygiene Rating Filter -->
                 <div>
-                    <label class="block font-semibold text-slate-600 mb-1"><i class="fa-solid fa-pump-soap text-rose-500 mr-1"></i>Đánh giá Sạch Sẽ</label>
-                    <select id="hygieneFilter" onchange="applyFilters()" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-rose-500">
+                    <label class="block font-semibold text-slate-600 mb-1"><i class="fa-solid fa-pump-soap text-palette-ember-500 mr-1"></i>Đánh giá Sạch Sẽ</label>
+                    <select id="hygieneFilter" onchange="applyFilters()" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-palette-ember-500">
                         <option value="all">Tất cả điểm vệ sinh</option>
                         <option value="4.5">Xuất sắc (&gt;= 4.5/5★)</option>
                         <option value="4.0">Sạch tốt (&gt;= 4.0/5★)</option>
@@ -167,8 +196,8 @@
 
                 <!-- Meal Type / Time -->
                 <div>
-                    <label class="block font-semibold text-slate-600 mb-1"><i class="fa-solid fa-clock text-rose-500 mr-1"></i>Bữa Ăn</label>
-                    <select id="mealFilter" onchange="applyFilters()" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-rose-500">
+                    <label class="block font-semibold text-slate-600 mb-1"><i class="fa-solid fa-clock text-palette-ember-500 mr-1"></i>Bữa Ăn</label>
+                    <select id="mealFilter" onchange="applyFilters()" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-palette-ember-500">
                         <option value="all">Tất cả thời gian</option>
                         <option value="breakfast">Ăn sáng nhanh (6h - 9h)</option>
                         <option value="lunch">Ăn trưa (11h - 13h30)</option>
@@ -182,7 +211,7 @@
         <div id="mapContainer" class="hidden mb-6 bg-white p-3 rounded-2xl shadow-sm border border-slate-200 transition-all">
             <div class="flex items-center justify-between mb-2 px-1">
                 <span class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-                    <i class="fa-solid fa-map-pin text-rose-500"></i> Bản đồ khu vực Chùa Láng (FTU / DAV / VYA)
+                    <i class="fa-solid fa-map-pin text-palette-ember-500"></i> Bản đồ khu vực Chùa Láng (FTU / DAV / VYA)
                 </span>
                 <span class="text-[11px] text-slate-500">Nhấp vào ghim để xem thông tin quán</span>
             </div>
@@ -192,7 +221,7 @@
         <!-- RESULTS STATS & SORTING -->
         <div class="flex items-center justify-between mb-4 px-1">
             <div class="text-xs font-semibold text-slate-600">
-                Tìm thấy <span id="vendorCount" class="text-rose-600 font-bold">0</span> quán ăn phù hợp
+                Tìm thấy <span id="vendorCount" class="text-palette-ember-600 font-bold">0</span> quán ăn phù hợp
             </div>
             <div class="flex items-center gap-2 text-xs">
                 <span class="text-slate-500">Sắp xếp:</span>
@@ -215,7 +244,7 @@
             <i class="fa-solid fa-bowl-rice text-4xl text-slate-300 mb-3"></i>
             <h3 class="text-base font-bold text-slate-700">Không tìm thấy quán phù hợp</h3>
             <p class="text-xs text-slate-500 mt-1 max-w-md mx-auto">Thử nới lỏng bộ lọc mức giá hoặc xóa từ khóa tìm kiếm để xem thêm gợi ý nhé!</p>
-            <button onclick="resetFilters()" class="mt-4 text-xs font-bold text-rose-600 hover:text-rose-700 bg-rose-50 px-4 py-2 rounded-xl border border-rose-200">Đặt lại bộ lọc</button>
+            <button onclick="resetFilters()" class="mt-4 text-xs font-bold text-palette-ember-600 hover:text-palette-ember-700 bg-palette-ember-50 px-4 py-2 rounded-xl border border-palette-ember-200">Đặt lại bộ lọc</button>
         </div>
 
     </main>
@@ -226,7 +255,7 @@
             <!-- Modal Header -->
             <div class="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white z-10">
                 <div class="flex items-center gap-2">
-                    <div class="w-8 h-8 rounded-lg bg-rose-100 text-rose-600 flex items-center justify-center font-bold text-sm">
+                    <div class="w-8 h-8 rounded-lg bg-palette-ember-100 text-palette-ember-600 flex items-center justify-center font-bold text-sm">
                         <i class="fa-solid fa-pen-to-square"></i>
                     </div>
                     <div>
@@ -244,7 +273,7 @@
                 <!-- Select Vendor -->
                 <div>
                     <label class="block font-semibold text-slate-700 mb-1">Chọn Quán Ăn *</label>
-                    <select id="reviewVendorSelect" required class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 font-medium text-slate-800 focus:ring-2 focus:ring-rose-500 focus:outline-none">
+                    <select id="reviewVendorSelect" required class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 font-medium text-slate-800 focus:ring-2 focus:ring-palette-ember-500 focus:outline-none">
                         <!-- Populated by JS -->
                     </select>
                 </div>
@@ -253,7 +282,7 @@
                 <div class="grid grid-cols-2 gap-3 bg-slate-50 p-3 rounded-xl border border-slate-200">
                     <div>
                         <label class="block font-semibold text-slate-700 mb-1">Chất Lượng & Món Ăn</label>
-                        <div class="flex items-center gap-1 text-amber-400 text-base cursor-pointer" id="starRatingQuality">
+                        <div class="flex items-center gap-1 text-palette-yolk-400 text-base cursor-pointer" id="starRatingQuality">
                             <i class="fa-solid fa-star" onclick="setRating('quality', 1)"></i>
                             <i class="fa-solid fa-star" onclick="setRating('quality', 2)"></i>
                             <i class="fa-solid fa-star" onclick="setRating('quality', 3)"></i>
@@ -276,26 +305,26 @@
                 <!-- Actual Price Paid -->
                 <div>
                     <label class="block font-semibold text-slate-700 mb-1">Giá thực tế bạn đã trả (VNĐ) *</label>
-                    <input type="number" id="reviewPrice" required placeholder="Ví dụ: 25000" min="5000" max="200000" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 font-medium text-slate-800 focus:ring-2 focus:ring-rose-500 focus:outline-none">
+                    <input type="number" id="reviewPrice" required placeholder="Ví dụ: 25000" min="5000" max="200000" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 font-medium text-slate-800 focus:ring-2 focus:ring-palette-ember-500 focus:outline-none">
                 </div>
 
                 <!-- Review Comment -->
                 <div>
                     <label class="block font-semibold text-slate-700 mb-1">Nhận xét chi tiết (Khuyên dùng thử món gì? Thái độ phục vụ?)</label>
-                    <textarea id="reviewComment" rows="3" placeholder="Ví dụ: Bún trộn ở đây đầy đặn, cô chủ vui tính, ngõ hơi hẹp tý nhưng sạch sẽ..." class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 font-medium text-slate-800 focus:ring-2 focus:ring-rose-500 focus:outline-none"></textarea>
+                    <textarea id="reviewComment" rows="3" placeholder="Ví dụ: Bún trộn ở đây đầy đặn, cô chủ vui tính, ngõ hơi hẹp tý nhưng sạch sẽ..." class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 font-medium text-slate-800 focus:ring-2 focus:ring-palette-ember-500 focus:outline-none"></textarea>
                 </div>
 
                 <!-- Student Verification Badge Info -->
-                <div class="bg-rose-50/60 p-3 rounded-xl border border-rose-100 space-y-1">
-                    <div class="flex items-center gap-1.5 font-bold text-rose-800">
-                        <i class="fa-solid fa-user-check text-rose-600"></i>
+                <div class="bg-palette-ember-50/60 p-3 rounded-xl border border-palette-ember-100 space-y-1">
+                    <div class="flex items-center gap-1.5 font-bold text-palette-ember-800">
+                        <i class="fa-solid fa-user-check text-palette-ember-600"></i>
                         <span>Xác thực Badge Sinh Viên</span>
                     </div>
-                    <p class="text-[11px] text-rose-700" id="badgeNotice">Đánh giá của bạn sẽ được tự động gắn badge theo tài khoản sinh viên đã đăng nhập.</p>
+                    <p class="text-[11px] text-palette-ember-700" id="badgeNotice">Đánh giá của bạn sẽ được tự động gắn badge theo tài khoản sinh viên đã đăng nhập.</p>
                 </div>
 
                 <!-- Submit Button -->
-                <button type="submit" id="submitReviewBtn" class="w-full bg-rose-600 hover:bg-rose-700 text-white font-bold py-3 rounded-xl text-xs sm:text-sm shadow-md transition">
+                <button type="submit" id="submitReviewBtn" class="w-full bg-palette-ember-600 hover:bg-palette-ember-700 text-white font-bold py-3 rounded-xl text-xs sm:text-sm shadow-md transition">
                     Gửi Đánh Giá Ngay
                 </button>
             </form>
@@ -315,7 +344,7 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4">
             <div class="flex flex-col md:flex-row items-center justify-between gap-4">
                 <div class="flex items-center gap-2">
-                    <div class="w-7 h-7 rounded-lg bg-rose-600 flex items-center justify-center p-1">
+                    <div class="w-7 h-7 rounded-lg bg-palette-ember-600 flex items-center justify-center p-1">
                         <img src="assets/logo-mark.png" alt="ChùaLángEats" class="w-full h-full object-contain">
                     </div>
                     <span class="font-bold text-white text-sm">Chùa Láng Eats</span>
@@ -373,13 +402,13 @@
                         const initial = name.charAt(0).toUpperCase();
                         const badge = profile?.badge || "Sinh Viên";
                         authArea.innerHTML = `
-                            <a href="profile.html" class="flex items-center gap-1.5 font-semibold text-xs text-slate-700 hover:text-rose-600 bg-slate-100 hover:bg-slate-200 px-2.5 py-1.5 rounded-xl transition">
-                                <span class="w-5 h-5 rounded-full bg-rose-600 text-white flex items-center justify-center text-[10px] font-bold">${initial}</span>
+                            <a href="profile.html" class="flex items-center gap-1.5 font-semibold text-xs text-slate-700 hover:text-palette-ember-600 bg-slate-100 hover:bg-slate-200 px-2.5 py-1.5 rounded-xl transition">
+                                <span class="w-5 h-5 rounded-full bg-palette-ember-600 text-white flex items-center justify-center text-[10px] font-bold">${initial}</span>
                                 <span class="hidden sm:inline">${escapeHtml(badge)}</span>
                             </a>`;
                     } else {
                         authArea.innerHTML = `
-                            <a href="login.html" class="bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold px-3 py-2 rounded-xl transition shadow-sm">
+                            <a href="login.html" class="bg-palette-ember-600 hover:bg-palette-ember-700 text-white text-xs font-bold px-3 py-2 rounded-xl transition shadow-sm">
                                 Đăng Nhập
                             </a>`;
                     }
@@ -395,7 +424,7 @@
             if (grid) {
                 grid.innerHTML = `
                     <div class="col-span-full text-center py-12">
-                        <i class="fa-solid fa-spinner fa-spin text-3xl text-rose-500 mb-2"></i>
+                        <i class="fa-solid fa-spinner fa-spin text-3xl text-palette-ember-500 mb-2"></i>
                         <p class="text-xs font-semibold text-slate-500">Đang kết nối dữ liệu Chùa Láng Eats...</p>
                     </div>`;
             }
@@ -406,8 +435,8 @@
                 console.error("Lỗi khi tải danh sách quán:", error);
                 if (grid) {
                     grid.innerHTML = `
-                        <div class="col-span-full text-center py-12 bg-white rounded-2xl border border-rose-200">
-                            <i class="fa-solid fa-triangle-exclamation text-3xl text-rose-500 mb-2"></i>
+                        <div class="col-span-full text-center py-12 bg-white rounded-2xl border border-palette-ember-200">
+                            <i class="fa-solid fa-triangle-exclamation text-3xl text-palette-ember-500 mb-2"></i>
                             <p class="text-sm font-bold text-slate-700">Không thể tải dữ liệu quán ăn</p>
                             <p class="text-xs text-slate-500 mt-1">${escapeHtml(error.message)}</p>
                         </div>`;
@@ -494,12 +523,12 @@
                                 
                                 <!-- Price Badge -->
                                 <div class="absolute top-3 left-3 bg-slate-900/80 backdrop-blur-md text-white text-[11px] font-bold px-2.5 py-1 rounded-lg">
-                                    <i class="fa-solid fa-tag text-rose-400 mr-1"></i>${escapeHtml(vendor.priceText)}
+                                    <i class="fa-solid fa-tag text-palette-ember-400 mr-1"></i>${escapeHtml(vendor.priceText)}
                                 </div>
 
                                 <!-- Distance Badge -->
                                 <div class="absolute top-3 right-3 bg-white/90 backdrop-blur-md text-slate-800 text-[11px] font-bold px-2 py-1 rounded-lg flex items-center gap-1 shadow-sm">
-                                    <i class="fa-solid fa-person-walking text-rose-600"></i>${vendor.distanceMinutes} phút đi bộ
+                                    <i class="fa-solid fa-person-walking text-palette-ember-600"></i>${vendor.distanceMinutes} phút đi bộ
                                 </div>
 
                                 <!-- Hygiene Shield Badge -->
@@ -511,15 +540,15 @@
                             <!-- Card Body -->
                             <div class="p-4 space-y-2">
                                 <div class="flex items-start justify-between gap-2">
-                                    <h3 class="font-bold text-slate-900 text-sm leading-snug hover:text-rose-600 cursor-pointer" onclick="openDetailModal(${vendor.id})">${escapeHtml(vendor.name)}</h3>
-                                    <div class="flex items-center text-amber-500 font-bold text-xs shrink-0">
+                                    <h3 class="font-bold text-slate-900 text-sm leading-snug hover:text-palette-ember-600 cursor-pointer" onclick="openDetailModal(${vendor.id})">${escapeHtml(vendor.name)}</h3>
+                                    <div class="flex items-center text-palette-yolk-500 font-bold text-xs shrink-0">
                                         <i class="fa-solid fa-star text-xs mr-0.5"></i>${vendor.overallRating}
                                         <span class="text-slate-400 font-normal text-[10px] ml-0.5">(${vendor.reviewCount})</span>
                                     </div>
                                 </div>
 
                                 <p class="text-[11px] text-slate-500 flex items-center gap-1 truncate">
-                                    <i class="fa-solid fa-location-dot text-rose-500 text-xs shrink-0"></i>${escapeHtml(vendor.address)}
+                                    <i class="fa-solid fa-location-dot text-palette-ember-500 text-xs shrink-0"></i>${escapeHtml(vendor.address)}
                                 </p>
 
                                 <p class="text-xs text-slate-600 line-clamp-2 leading-relaxed pt-1">
@@ -536,7 +565,7 @@
                         <!-- Card Footer Actions -->
                         <div class="px-4 py-3 bg-slate-50/80 border-t border-slate-100 flex items-center justify-between text-xs mt-2">
                             <span class="text-[11px] font-medium text-slate-500">${escapeHtml(vendor.category)}</span>
-                            <button onclick="openDetailModal(${vendor.id})" class="font-bold text-rose-600 hover:text-rose-700 flex items-center gap-1 text-xs">
+                            <button onclick="openDetailModal(${vendor.id})" class="font-bold text-palette-ember-600 hover:text-palette-ember-700 flex items-center gap-1 text-xs">
                                 Chi tiết & Đánh giá <i class="fa-solid fa-chevron-right text-[10px]"></i>
                             </button>
                         </div>
@@ -656,10 +685,10 @@
                 marker._chualangSpotId = v.id;
                 marker.bindPopup(`
                     <div class="text-xs p-1 font-sans">
-                        <strong class="text-rose-600 block text-sm">${escapeHtml(v.name)}</strong>
+                        <strong class="text-palette-ember-600 block text-sm">${escapeHtml(v.name)}</strong>
                         <div class="text-slate-600 font-bold">${escapeHtml(v.priceText)}</div>
                         <div class="text-slate-500 mt-1">${escapeHtml(v.address)}</div>
-                        <button onclick="openDetailModal(${v.id})" class="mt-2 bg-rose-600 text-white font-bold px-2 py-1 rounded text-[10px] w-full">Xem đánh giá</button>
+                        <button onclick="openDetailModal(${v.id})" class="mt-2 bg-palette-ember-600 text-white font-bold px-2 py-1 rounded text-[10px] w-full">Xem đánh giá</button>
                     </div>
                 `);
                 markers.push(marker);
@@ -720,7 +749,7 @@
             const badgeNotice = document.getElementById("badgeNotice");
             if (badgeNotice) {
                 const badge = currentProfile?.badge || "Sinh Viên Verified";
-                badgeNotice.innerHTML = `Tài khoản: <strong>${escapeHtml(currentProfile?.username || '')}</strong> (Badge: <span class="text-rose-600 font-bold">${escapeHtml(badge)}</span>)`;
+                badgeNotice.innerHTML = `Tài khoản: <strong>${escapeHtml(currentProfile?.username || '')}</strong> (Badge: <span class="text-palette-ember-600 font-bold">${escapeHtml(badge)}</span>)`;
             }
 
             document.getElementById("reviewModal")?.classList.remove("hidden");
@@ -815,7 +844,7 @@
             // Show loading placeholder
             modalContent.innerHTML = `
                 <div class="p-8 text-center">
-                    <i class="fa-solid fa-spinner fa-spin text-2xl text-rose-500 mb-2"></i>
+                    <i class="fa-solid fa-spinner fa-spin text-2xl text-palette-ember-500 mb-2"></i>
                     <p class="text-xs text-slate-500">Đang tải đánh giá từ Supabase...</p>
                 </div>`;
             
@@ -840,10 +869,10 @@
                         <i class="fa-solid fa-xmark"></i>
                     </button>
                     <div class="absolute bottom-4 left-4 right-4 text-white">
-                        <span class="bg-rose-600 text-[10px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wider">${escapeHtml(v.category)}</span>
+                        <span class="bg-palette-ember-600 text-[10px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wider">${escapeHtml(v.category)}</span>
                         <h2 class="text-xl sm:text-2xl font-black mt-1 leading-tight">${escapeHtml(v.name)}</h2>
                         <p class="text-xs text-slate-200 flex items-center gap-1 mt-0.5">
-                            <i class="fa-solid fa-location-dot text-rose-400"></i>${escapeHtml(v.address)}
+                            <i class="fa-solid fa-location-dot text-palette-ember-400"></i>${escapeHtml(v.address)}
                         </p>
                     </div>
                 </div>
@@ -854,7 +883,7 @@
                     <div class="grid grid-cols-3 gap-2 bg-slate-50 p-3 rounded-xl border border-slate-200 text-center">
                         <div>
                             <div class="text-slate-400 font-semibold text-[10px]">Mức Giá Khảo Sát</div>
-                            <div class="font-bold text-rose-600 text-xs sm:text-sm mt-0.5">${escapeHtml(v.priceText)}</div>
+                            <div class="font-bold text-palette-ember-600 text-xs sm:text-sm mt-0.5">${escapeHtml(v.priceText)}</div>
                         </div>
                         <div class="border-x border-slate-200">
                             <div class="text-slate-400 font-semibold text-[10px]">Điểm Vệ Sinh</div>
@@ -865,7 +894,7 @@
                         <div>
                             <div class="text-slate-400 font-semibold text-[10px]">Khoảng Cách</div>
                             <div class="font-bold text-slate-800 text-xs sm:text-sm mt-0.5 flex items-center justify-center gap-1">
-                                <i class="fa-solid fa-person-walking text-rose-500"></i>${v.distanceMinutes} phút
+                                <i class="fa-solid fa-person-walking text-palette-ember-500"></i>${v.distanceMinutes} phút
                             </div>
                         </div>
                     </div>
@@ -880,7 +909,7 @@
                     <div class="space-y-3 pt-2">
                         <div class="flex items-center justify-between border-b border-slate-200 pb-2">
                             <h4 class="font-bold text-slate-900 text-sm">Đánh giá từ Sinh Viên (${liveReviews.length})</h4>
-                            <button onclick="closeDetailModal(); openReviewModal(${v.id})" class="text-rose-600 font-bold hover:underline">
+                            <button onclick="closeDetailModal(); openReviewModal(${v.id})" class="text-palette-ember-600 font-bold hover:underline">
                                 + Viết nhận xét
                             </button>
                         </div>
@@ -893,9 +922,9 @@
                                     <div class="flex items-center justify-between">
                                         <div class="flex items-center gap-1.5">
                                             <span class="font-bold text-slate-800">${escapeHtml(r.user)}</span>
-                                            <span class="bg-rose-100 text-rose-800 text-[9px] font-bold px-1.5 py-0.5 rounded">${escapeHtml(r.badge)}</span>
+                                            <span class="bg-palette-ember-100 text-palette-ember-800 text-[9px] font-bold px-1.5 py-0.5 rounded">${escapeHtml(r.badge)}</span>
                                         </div>
-                                        <span class="text-amber-500 font-bold">${r.rating} ★</span>
+                                        <span class="text-palette-yolk-500 font-bold">${r.rating} ★</span>
                                     </div>
                                     <p class="text-slate-600">${escapeHtml(r.comment)}</p>
                                     <div class="text-[10px] text-slate-400 flex items-center gap-2 pt-1">
