@@ -272,11 +272,12 @@
         function initLocationPicker() {
             locationMap = L.map("locationPicker").setView([21.0222, 105.8028], 16);
 
-            // See index.html's initMap() for why there's no {s} subdomain here —
-            // OSM deprecated the {a,b,c}.tile.openstreetmap.org hosts.
-            L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            // See index.html's initMap() for why this uses Esri's keyless World
+            // Street Map tiles instead of tile.openstreetmap.org directly.
+            // Esri's URL order is {z}/{y}/{x} (y before x).
+            L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}", {
                 maxZoom: 19,
-                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+                attribution: "Tiles &copy; Esri &mdash; Source: Esri, HERE, Garmin, USGS, Intermap, INCREMENT P, NRCAN, Esri Japan, METI, Esri China (Hong Kong), NOSTRA, &copy; OpenStreetMap contributors, and the GIS User Community",
             }).addTo(locationMap);
 
             locationMap.on("click", (e) => setPickedLocation(e.latlng.lat, e.latlng.lng));
