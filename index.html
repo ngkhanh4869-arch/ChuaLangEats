@@ -662,12 +662,21 @@
         function initMap() {
             map = L.map('map').setView([21.0222, 105.8028], 16);
 
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            // OSM deprecated the {a,b,c}.tile.openstreetmap.org subdomains in favor
+            // of a single tile.openstreetmap.org host (see
+            // github.com/openstreetmap/operations/issues/737) — the old {s} pattern
+            // is what was silently failing and leaving the map blank.
+            L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 maxZoom: 19,
-                attribution: '© OpenStreetMap'
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             }).addTo(map);
 
             updateMapMarkers(vendors);
+
+            // The container was hidden (display:none via the "hidden" class) until
+            // just before this function ran, so Leaflet may have measured it before
+            // the browser finished reflowing. Re-measure once that settles.
+            setTimeout(() => map.invalidateSize(), 150);
         }
 
         function updateMapMarkers(items) {
