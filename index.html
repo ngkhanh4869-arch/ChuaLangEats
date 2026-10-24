@@ -662,13 +662,18 @@
         function initMap() {
             map = L.map('map').setView([21.0222, 105.8028], 16);
 
-            // OSM deprecated the {a,b,c}.tile.openstreetmap.org subdomains in favor
-            // of a single tile.openstreetmap.org host (see
-            // github.com/openstreetmap/operations/issues/737) — the old {s} pattern
-            // is what was silently failing and leaving the map blank.
-            L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            // Using Esri's free, keyless World Street Map raster tiles instead of
+            // tile.openstreetmap.org directly: OSM's donation-funded tile servers
+            // have been heavily rate-limiting and regionally throttling traffic
+            // throughout 2026 (including specifically slower access from South
+            // East Asia), with no guaranteed SLA for third-party sites — fixing
+            // the deprecated {s} subdomain wasn't enough because that was never
+            // the only problem. Esri's URL order is {z}/{y}/{x} (y before x) —
+            // different from OSM's {z}/{x}/{y}, so don't swap this back without
+            // also swapping the order.
+            L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
                 maxZoom: 19,
-                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                attribution: 'Tiles &copy; Esri &mdash; Source: Esri, HERE, Garmin, USGS, Intermap, INCREMENT P, NRCAN, Esri Japan, METI, Esri China (Hong Kong), NOSTRA, &copy; OpenStreetMap contributors, and the GIS User Community'
             }).addTo(map);
 
             updateMapMarkers(vendors);
