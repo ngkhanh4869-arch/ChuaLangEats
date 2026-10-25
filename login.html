@@ -57,11 +57,11 @@
             <!-- LOGIN FORM -->
             <form id="formLogin" class="space-y-4 text-xs">
                 <div>
-                    <label class="block font-semibold mb-1">Tên tài khoản (Username)</label>
+                    <label for="loginUsername" class="block font-semibold mb-1">Tên tài khoản (Username)</label>
                     <input type="text" id="loginUsername" required placeholder="Ví dụ: anh123" class="w-full bg-palette-tofu border border-palette-cream rounded-xl p-3 font-medium focus:ring-2 focus:ring-palette-ember focus:outline-none">
                 </div>
                 <div>
-                    <label class="block font-semibold mb-1">Mật khẩu</label>
+                    <label for="loginPassword" class="block font-semibold mb-1">Mật khẩu</label>
                     <input type="password" id="loginPassword" required placeholder="••••••••" class="w-full bg-palette-tofu border border-palette-cream rounded-xl p-3 font-medium focus:ring-2 focus:ring-palette-ember focus:outline-none">
                 </div>
                 <button type="submit" class="w-full bg-palette-ember hover:bg-palette-ember/90 text-white font-bold py-3 rounded-xl shadow-md transition">Đăng Nhập Ngay</button>
@@ -70,15 +70,15 @@
             <!-- SIGNUP FORM -->
             <form id="formSignup" class="hidden space-y-4 text-xs">
                 <div>
-                    <label class="block font-semibold mb-1">Tên tài khoản mong muốn</label>
+                    <label for="signupUsername" class="block font-semibold mb-1">Tên tài khoản mong muốn</label>
                     <input type="text" id="signupUsername" required placeholder="Viết liền không dấu (vd: ftu_foodie)" class="w-full bg-palette-tofu border border-palette-cream rounded-xl p-3 font-medium focus:ring-2 focus:ring-palette-ember focus:outline-none">
                 </div>
                 <div>
-                    <label class="block font-semibold mb-1">Mật khẩu</label>
+                    <label for="signupPassword" class="block font-semibold mb-1">Mật khẩu</label>
                     <input type="password" id="signupPassword" required minlength="6" placeholder="Tối thiểu 6 ký tự" class="w-full bg-palette-tofu border border-palette-cream rounded-xl p-3 font-medium focus:ring-2 focus:ring-palette-ember focus:outline-none">
                 </div>
                 <div>
-                    <label class="block font-semibold mb-1">Trường học / Huy hiệu Badge</label>
+                    <label for="signupBadge" class="block font-semibold mb-1">Trường học / Huy hiệu Badge</label>
                     <select id="signupBadge" class="w-full bg-palette-tofu border border-palette-cream rounded-xl p-3 font-medium focus:ring-2 focus:ring-palette-ember focus:outline-none">
                         <option value="FTUer Verified">Sinh viên Ngoại Thương (FTUer)</option>
                         <option value="DAVer Verified">Sinh viên Ngoại Giao (DAVer)</option>
@@ -139,7 +139,7 @@
                     
                     if (error) {
                         alertBox.textContent = "Đăng nhập thất bại: " + error.message;
-                        alertBox.className = "text-xs p-3 rounded-xl mb-4 bg-rose-100 text-rose-700 font-semibold";
+                        alertBox.className = "text-xs p-3 rounded-xl mb-4 bg-palette-ember/10 text-palette-ember font-semibold";
                     } else {
                         window.location.href = "profile.html";
                     }
@@ -159,7 +159,7 @@
 
                     if (error) {
                         alertBox.textContent = "Đăng ký thất bại: " + error.message;
-                        alertBox.className = "text-xs p-3 rounded-xl mb-4 bg-rose-100 text-rose-700 font-semibold";
+                        alertBox.className = "text-xs p-3 rounded-xl mb-4 bg-palette-ember/10 text-palette-ember font-semibold";
                     } else {
                         alertBox.textContent = "Tạo tài khoản thành công! Đang chuyển hướng...";
                         alertBox.className = "text-xs p-3 rounded-xl mb-4 bg-emerald-100 text-emerald-800 font-semibold";
