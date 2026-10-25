@@ -105,7 +105,7 @@
                     <input type="radio" name="reportReason" value="Nội dung vi phạm" class="accent-palette-ember">
                     <span>Nội dung vi phạm</span>
                 </label>
-                <p id="reportError" class="hidden text-rose-600 font-semibold"></p>
+                <p id="reportError" class="hidden text-palette-ember font-semibold"></p>
                 <button type="submit" id="reportSubmitBtn" class="w-full bg-palette-ember hover:bg-palette-ember/90 text-white font-bold py-2.5 rounded-xl shadow-md transition disabled:opacity-70">Gửi Báo Cáo</button>
             </form>
         </div>
@@ -168,7 +168,7 @@
                 if (error) {
                     if (list) {
                         list.classList.remove("hidden");
-                        list.innerHTML = `<p class="text-xs text-rose-600 text-center py-10">Không tải được bảng tin: ${escapeHtml(error.message)}</p>`;
+                        list.innerHTML = `<p class="text-xs text-palette-ember text-center py-10">Không tải được bảng tin: ${escapeHtml(error.message)}</p>`;
                     }
                     return;
                 }
@@ -190,7 +190,7 @@
                 skeleton?.classList.add("hidden");
                 if (list) {
                     list.classList.remove("hidden");
-                    list.innerHTML = `<p class="text-xs text-rose-600 text-center py-10">Không tải được bảng tin: ${escapeHtml(err.message || String(err))}</p>`;
+                    list.innerHTML = `<p class="text-xs text-palette-ember text-center py-10">Không tải được bảng tin: ${escapeHtml(err.message || String(err))}</p>`;
                 }
             }
         }
@@ -269,7 +269,7 @@
                 <div class="flex items-center gap-2 px-4 pb-4 pt-1 border-t border-palette-cream">
                     <a href="index.html?spotId=${spot.id}" class="flex-1 text-center text-xs font-bold text-palette-matcha border border-palette-cream rounded-lg py-2 hover:bg-palette-tofu transition">📍 Xem trên Bản Đồ</a>
                     <button type="button" class="report-btn flex-1 text-xs font-bold text-palette-yolk border border-palette-yolk/30 rounded-lg py-2 hover:bg-palette-yolk/10 transition" data-spot-id="${spot.id}">🚩 Báo Cáo</button>
-                    ${canDelete ? `<button type="button" class="delete-btn text-xs font-bold text-rose-600 border border-rose-200 rounded-lg py-2 px-3 hover:bg-rose-50 transition" data-spot-id="${spot.id}">🗑️ Xóa Bài</button>` : ""}
+                    ${canDelete ? `<button type="button" class="delete-btn text-xs font-bold text-palette-ember border border-palette-ember/30 rounded-lg py-2 px-3 hover:bg-palette-ember/10 transition" data-spot-id="${spot.id}">🗑️ Xóa Bài</button>` : ""}
                 </div>
             </article>`;
         }
