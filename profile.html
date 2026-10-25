@@ -182,7 +182,7 @@
             if (error) {
                 if (alertBox) {
                     alertBox.textContent = "Không thể lưu: " + error.message;
-                    alertBox.className = "text-xs p-3 rounded-xl mb-4 bg-rose-100 text-rose-700 font-semibold";
+                    alertBox.className = "text-xs p-3 rounded-xl mb-4 bg-palette-ember/10 text-palette-ember font-semibold";
                 }
             } else {
                 currentProfile.badge = newBadge;
@@ -233,7 +233,7 @@
                 .order("created_at", { ascending: false });
 
             if (error) {
-                container.innerHTML = `<p class="text-xs text-rose-600 text-center py-6">Không tải được danh sách quán: ${escapeHtml(error.message)}</p>`;
+                container.innerHTML = `<p class="text-xs text-palette-ember text-center py-6">Không tải được danh sách quán: ${escapeHtml(error.message)}</p>`;
                 return;
             }
 
@@ -255,7 +255,7 @@
                             ${spot.status === "approved" ? "Đã duyệt" : "Chờ duyệt"}
                         </span>
                     </div>
-                    <button type="button" onclick="removeSpot(${spot.id})" class="shrink-0 text-xs font-semibold text-rose-600 hover:text-rose-700 px-2 py-1">Xóa</button>
+                    <button type="button" onclick="removeSpot(${spot.id})" class="shrink-0 text-xs font-semibold text-palette-ember hover:text-palette-ember/80 px-2 py-1">Xóa</button>
                 </div>
             `).join("");
         }
@@ -276,7 +276,7 @@
                 .order("created_at", { ascending: false });
 
             if (error) {
-                container.innerHTML = `<p class="text-xs text-rose-600 text-center py-6">Không tải được đánh giá: ${escapeHtml(error.message)}</p>`;
+                container.innerHTML = `<p class="text-xs text-palette-ember text-center py-6">Không tải được đánh giá: ${escapeHtml(error.message)}</p>`;
                 return;
             }
 
@@ -296,7 +296,7 @@
                         <p class="text-xs text-palette-matcha/60">Chất lượng ${review.quality_rating ?? "–"}/5 · Vệ sinh ${review.hygiene_rating ?? "–"}/5</p>
                         ${review.comment ? `<p class="text-xs mt-1">${escapeHtml(review.comment)}</p>` : ""}
                     </div>
-                    <button type="button" onclick="removeReview(${review.id})" class="shrink-0 text-xs font-semibold text-rose-600 hover:text-rose-700 px-2 py-1">Xóa</button>
+                    <button type="button" onclick="removeReview(${review.id})" class="shrink-0 text-xs font-semibold text-palette-ember hover:text-palette-ember/80 px-2 py-1">Xóa</button>
                 </div>
             `).join("");
         }
