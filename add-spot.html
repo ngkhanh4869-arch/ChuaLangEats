@@ -58,18 +58,18 @@
 
             <form id="addSpotForm" class="space-y-4 text-xs">
                 <div>
-                    <label class="block font-semibold mb-1">Tên Quán *</label>
+                    <label for="spotName" class="block font-semibold mb-1">Tên Quán *</label>
                     <input type="text" id="spotName" required placeholder="Ví dụ: Bún Trộn Ngõ 84 Chùa Láng" class="w-full bg-palette-tofu border border-palette-cream rounded-xl p-3 font-medium focus:ring-2 focus:ring-palette-ember focus:outline-none">
                 </div>
 
                 <div>
-                    <label class="block font-semibold mb-1">Địa Chỉ *</label>
+                    <label for="address" class="block font-semibold mb-1">Địa Chỉ *</label>
                     <input type="text" id="address" required placeholder="Số 12 Ngõ 84 Chùa Láng" class="w-full bg-palette-tofu border border-palette-cream rounded-xl p-3 font-medium focus:ring-2 focus:ring-palette-ember focus:outline-none">
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                        <label class="block font-semibold mb-1">Danh Mục *</label>
+                        <label for="category" class="block font-semibold mb-1">Danh Mục *</label>
                         <select id="category" required class="w-full bg-palette-tofu border border-palette-cream rounded-xl p-3 font-medium focus:ring-2 focus:ring-palette-ember focus:outline-none">
                             <option value="Ăn Trưa">Ăn Trưa</option>
                             <option value="Ăn Sáng">Ăn Sáng</option>
@@ -79,7 +79,7 @@
                         </select>
                     </div>
                     <div>
-                        <label class="block font-semibold mb-1">Bữa Ăn *</label>
+                        <label for="mealType" class="block font-semibold mb-1">Bữa Ăn *</label>
                         <select id="mealType" required class="w-full bg-palette-tofu border border-palette-cream rounded-xl p-3 font-medium focus:ring-2 focus:ring-palette-ember focus:outline-none">
                             <option value="lunch">Cơm / Bún / Phở</option>
                             <option value="snack">Ăn Nhẹ / Đồ Uống</option>
@@ -90,45 +90,45 @@
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                        <label class="block font-semibold mb-1">Giá Tối Thiểu (VNĐ)</label>
-                        <input type="number" id="minPrice" placeholder="20000" class="w-full bg-palette-tofu border border-palette-cream rounded-xl p-3 font-medium focus:ring-2 focus:ring-palette-ember focus:outline-none">
+                        <label for="minPrice" class="block font-semibold mb-1">Giá Tối Thiểu (VNĐ)</label>
+                        <input type="number" id="minPrice" required min="0" placeholder="20000" class="w-full bg-palette-tofu border border-palette-cream rounded-xl p-3 font-medium focus:ring-2 focus:ring-palette-ember focus:outline-none">
                     </div>
                     <div>
-                        <label class="block font-semibold mb-1">Giá Tối Đa (VNĐ)</label>
-                        <input type="number" id="maxPrice" placeholder="35000" class="w-full bg-palette-tofu border border-palette-cream rounded-xl p-3 font-medium focus:ring-2 focus:ring-palette-ember focus:outline-none">
+                        <label for="maxPrice" class="block font-semibold mb-1">Giá Tối Đa (VNĐ)</label>
+                        <input type="number" id="maxPrice" required min="0" placeholder="35000" class="w-full bg-palette-tofu border border-palette-cream rounded-xl p-3 font-medium focus:ring-2 focus:ring-palette-ember focus:outline-none">
                     </div>
                 </div>
 
                 <div>
-                    <label class="block font-semibold mb-1">Khoảng Cách Từ Cổng Trường (phút đi bộ)</label>
-                    <input type="number" id="distanceMinutes" placeholder="3" class="w-full bg-palette-tofu border border-palette-cream rounded-xl p-3 font-medium focus:ring-2 focus:ring-palette-ember focus:outline-none">
+                    <label for="distanceMinutes" class="block font-semibold mb-1">Khoảng Cách Từ Cổng Trường (phút đi bộ)</label>
+                    <input type="number" id="distanceMinutes" required min="0" placeholder="3" class="w-full bg-palette-tofu border border-palette-cream rounded-xl p-3 font-medium focus:ring-2 focus:ring-palette-ember focus:outline-none">
                 </div>
 
                 <!-- Location picker -->
                 <div>
-                    <label class="block font-semibold mb-1">Vị Trí Trên Bản Đồ *</label>
+                    <p class="font-semibold mb-1">Vị Trí Trên Bản Đồ *</p>
                     <p class="text-[11px] text-palette-matcha/50 mb-2">Bấm vào bản đồ để đánh dấu đúng vị trí quán, hoặc dùng vị trí hiện tại của bạn. Có thể kéo ghim để chỉnh lại.</p>
                     <div class="flex items-center justify-between mb-2">
                         <span id="locationStatus" class="text-[11px] font-semibold text-palette-matcha/60">Chưa chọn vị trí</span>
                         <button type="button" id="useCurrentLocationBtn" class="text-[11px] font-bold text-palette-ember hover:underline">📍 Dùng vị trí hiện tại</button>
                     </div>
                     <div id="locationPicker" class="rounded-xl overflow-hidden border border-palette-cream" style="height: 220px;"></div>
-                    <p id="locationError" class="hidden text-rose-600 text-[11px] mt-1 font-semibold"></p>
+                    <p id="locationError" class="hidden text-palette-ember text-[11px] mt-1 font-semibold"></p>
                 </div>
 
                 <div>
-                    <label class="block font-semibold mb-1">Mô Tả / Review Ngắn</label>
+                    <label for="description" class="block font-semibold mb-1">Mô Tả / Review Ngắn</label>
                     <textarea id="description" rows="3" placeholder="Quán có gì đặc biệt? Giá sinh viên không?" class="w-full bg-palette-tofu border border-palette-cream rounded-xl p-3 font-medium focus:ring-2 focus:ring-palette-ember focus:outline-none"></textarea>
                 </div>
 
                 <div>
-                    <label class="block font-semibold mb-1">Thẻ / Tags (phân cách bằng dấu phẩy)</label>
+                    <label for="tags" class="block font-semibold mb-1">Thẻ / Tags (phân cách bằng dấu phẩy)</label>
                     <input type="text" id="tags" placeholder="ftuer, bun_dau, ngon_boduong" class="w-full bg-palette-tofu border border-palette-cream rounded-xl p-3 font-medium focus:ring-2 focus:ring-palette-ember focus:outline-none">
                 </div>
 
                 <!-- Dropzone Ảnh Món -->
                 <div>
-                    <label class="block font-semibold mb-1">Ảnh Món Ăn (1 - 2 ảnh)</label>
+                    <label for="foodPhotos" class="block font-semibold mb-1">Ảnh Món Ăn (1 - 2 ảnh)</label>
                     <div id="foodDropzone" class="border-2 border-dashed border-palette-cream rounded-xl p-4 text-center cursor-pointer hover:border-palette-ember transition bg-palette-tofu/50">
                         <input type="file" id="foodPhotos" multiple accept="image/*" class="hidden">
                         <div id="foodDropzoneEmpty">
@@ -137,12 +137,12 @@
                         </div>
                         <div id="foodPreviewGrid" class="hidden grid grid-cols-2 gap-2 mt-2"></div>
                     </div>
-                    <p id="foodError" class="hidden text-rose-600 text-[11px] mt-1 font-semibold"></p>
+                    <p id="foodError" class="hidden text-palette-ember text-[11px] mt-1 font-semibold"></p>
                 </div>
 
                 <!-- Dropzone Ảnh Menu -->
                 <div>
-                    <label class="block font-semibold mb-1">Ảnh Menu / Bảng Giá (1 ảnh)</label>
+                    <label for="menuPhoto" class="block font-semibold mb-1">Ảnh Menu / Bảng Giá (1 ảnh)</label>
                     <div id="menuDropzone" class="border-2 border-dashed border-palette-cream rounded-xl p-4 text-center cursor-pointer hover:border-palette-ember transition bg-palette-tofu/50">
                         <input type="file" id="menuPhoto" accept="image/*" class="hidden">
                         <div id="menuDropzoneEmpty">
@@ -151,10 +151,10 @@
                         </div>
                         <div id="menuPreviewWrap" class="hidden relative inline-block mt-2">
                             <img id="menuPreviewImg" class="h-28 object-cover rounded-lg">
-                            <button type="button" id="menuRemoveBtn" class="absolute top-1 right-1 w-6 h-6 bg-white/90 rounded-full text-rose-600 font-bold shadow">✕</button>
+                            <button type="button" id="menuRemoveBtn" class="absolute top-1 right-1 w-6 h-6 bg-white/90 rounded-full text-palette-ember font-bold shadow">✕</button>
                         </div>
                     </div>
-                    <p id="menuError" class="hidden text-rose-600 text-[11px] mt-1 font-semibold"></p>
+                    <p id="menuError" class="hidden text-palette-ember text-[11px] mt-1 font-semibold"></p>
                 </div>
 
                 <button type="submit" id="submitBtn" class="w-full bg-palette-ember hover:bg-palette-ember/90 text-white font-bold py-3 rounded-xl shadow-md transition mt-4">
@@ -226,7 +226,7 @@
             foodGrid.innerHTML = foodFiles.map((file, i) => `
                 <div class="relative">
                     <img src="${URL.createObjectURL(file)}" class="w-full h-24 object-cover rounded-lg">
-                    <button type="button" data-index="${i}" class="food-remove-btn absolute top-1 right-1 w-6 h-6 bg-white/90 rounded-full text-rose-600 font-bold flex items-center justify-center shadow">✕</button>
+                    <button type="button" data-index="${i}" class="food-remove-btn absolute top-1 right-1 w-6 h-6 bg-white/90 rounded-full text-palette-ember font-bold flex items-center justify-center shadow">✕</button>
                 </div>
             `).join("");
 
@@ -408,7 +408,7 @@
         function showAlert(message, type) {
             const box = document.getElementById("formAlert");
             box.textContent = message;
-            box.className = `text-xs p-3 rounded-xl mb-4 font-semibold ${type === "success" ? "bg-emerald-100 text-emerald-800" : "bg-rose-100 text-rose-700"}`;
+            box.className = `text-xs p-3 rounded-xl mb-4 font-semibold ${type === "success" ? "bg-emerald-100 text-emerald-800" : "bg-palette-ember/10 text-palette-ember"}`;
             box.classList.remove("hidden");
             box.scrollIntoView({ behavior: "smooth", block: "center" });
         }
