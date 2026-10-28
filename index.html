@@ -88,7 +88,7 @@
                     <div>
                         <div class="flex items-center gap-2">
                             <h1 class="text-lg font-bold tracking-tight text-palette-matcha leading-none">ChùaLáng<span class="text-palette-ember-600">Eats</span></h1>
-                            <span class="bg-palette-ember-100 text-palette-ember-800 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">FTU • DAV • VYA</span>
+                            <span class="bg-palette-ember-100 text-palette-ember-800 text-[10px] font-bold px-2 py-0.5 rounded-full">FTU • DAV • VYA</span>
                         </div>
                         <p class="text-xs text-palette-matcha/55 mt-0.5">Tìm quán ngon, rẻ, sạch quanh Chùa Láng</p>
                     </div>
@@ -210,7 +210,7 @@
         <!-- COLLAPSIBLE MAP SECTION -->
         <div id="mapContainer" class="hidden mb-6 bg-white p-3 rounded-2xl shadow-sm border border-palette-cream transition-all">
             <div class="flex items-center justify-between mb-2 px-1">
-                <span class="text-xs font-bold text-palette-matcha/80 uppercase tracking-wider flex items-center gap-1.5">
+                <span class="text-xs font-bold text-palette-matcha/80 flex items-center gap-1.5">
                     <i class="fa-solid fa-map-pin text-palette-ember-500"></i> Bản đồ khu vực Chùa Láng (FTU / DAV / VYA)
                 </span>
                 <span class="text-[11px] text-palette-matcha/55">Nhấp vào ghim để xem thông tin quán</span>
@@ -349,7 +349,7 @@
                     </div>
                     <span class="font-bold text-white text-sm">Chùa Láng Eats</span>
                 </div>
-                <a href="https://github.com/ngkhanh4869-arch/ChuaLangEats" target="_blank" rel="noopener noreferrer"
+                <a href="https://www.facebook.com/share/1Gpo1Cmrgr/?mibextid=wwXIfr" target="_blank" rel="noopener noreferrer"
                    class="text-center md:text-right text-palette-matcha/40 hover:text-white underline decoration-dotted underline-offset-4 transition">
                     Dự án sinh viên nghiên cứu Đổi mới Sáng tạo & Tư duy Thiết kế (Design Thinking) • FTU Hanoi 2026
                 </a>
@@ -452,13 +452,15 @@
                 const reviews = spot.reviews || [];
                 const reviewCount = reviews.length;
 
-                // Calculate quality rating average
-                const qSum = reviews.reduce((sum, r) => sum + (r.quality_rating || 5), 0);
-                const overallRating = reviewCount > 0 ? (qSum / reviewCount).toFixed(1) : "5.0";
+                // Calculate quality rating average — null (not a fake "5.0") when
+                // there are no reviews yet, so the UI can say so honestly instead
+                // of claiming a perfect score nobody actually gave.
+                const qSum = reviews.reduce((sum, r) => sum + (r.quality_rating || 0), 0);
+                const overallRating = reviewCount > 0 ? parseFloat((qSum / reviewCount).toFixed(1)) : null;
 
                 // Calculate hygiene rating average
-                const hSum = reviews.reduce((sum, r) => sum + (r.hygiene_rating || 5), 0);
-                const hygieneScore = reviewCount > 0 ? (hSum / reviewCount).toFixed(1) : "5.0";
+                const hSum = reviews.reduce((sum, r) => sum + (r.hygiene_rating || 0), 0);
+                const hygieneScore = reviewCount > 0 ? parseFloat((hSum / reviewCount).toFixed(1)) : null;
 
                 const minP = spot.min_price || spot.minPrice || 0;
                 const maxP = spot.max_price || spot.maxPrice || 0;
@@ -484,8 +486,8 @@
                     distanceMinutes: spot.distance_minutes || 5,
                     lat: typeof spot.lat === 'number' ? spot.lat : null,
                     lng: typeof spot.lng === 'number' ? spot.lng : null,
-                    hygieneScore: parseFloat(hygieneScore),
-                    overallRating: parseFloat(overallRating),
+                    hygieneScore: hygieneScore,
+                    overallRating: overallRating,
                     reviewCount: reviewCount,
                     image: image,
                     tags: Array.isArray(spot.tags) ? spot.tags : ["FTU Verified"],
@@ -533,19 +535,25 @@
                                 </div>
 
                                 <!-- Hygiene Shield Badge -->
+                                ${vendor.hygieneScore !== null ? `
                                 <div class="absolute bottom-3 left-3 bg-emerald-600/90 text-white text-[10px] font-bold px-2 py-0.5 rounded-md flex items-center gap-1 backdrop-blur-sm">
                                     <i class="fa-solid fa-shield-halved"></i>Sạch Sẽ: ${vendor.hygieneScore}/5.0
-                                </div>
+                                </div>` : `
+                                <div class="absolute bottom-3 left-3 bg-palette-matcha/70 text-white text-[10px] font-bold px-2 py-0.5 rounded-md flex items-center gap-1 backdrop-blur-sm">
+                                    <i class="fa-solid fa-sparkles"></i>Mới thêm
+                                </div>`}
                             </div>
 
                             <!-- Card Body -->
                             <div class="p-4 space-y-2">
                                 <div class="flex items-start justify-between gap-2">
                                     <h3 class="font-bold text-palette-matcha text-sm leading-snug hover:text-palette-ember-600 cursor-pointer" onclick="openDetailModal(${vendor.id})">${escapeHtml(vendor.name)}</h3>
+                                    ${vendor.overallRating !== null ? `
                                     <div class="flex items-center text-palette-yolk-500 font-bold text-xs shrink-0">
                                         <i class="fa-solid fa-star text-xs mr-0.5"></i>${vendor.overallRating}
                                         <span class="text-palette-matcha/40 font-normal text-[10px] ml-0.5">(${vendor.reviewCount})</span>
-                                    </div>
+                                    </div>` : `
+                                    <span class="text-palette-matcha/40 font-semibold text-[10px] shrink-0">Chưa có đánh giá</span>`}
                                 </div>
 
                                 <p class="text-[11px] text-palette-matcha/55 flex items-center gap-1 truncate">
@@ -884,7 +892,7 @@
                         <i class="fa-solid fa-xmark"></i>
                     </button>
                     <div class="absolute bottom-4 left-4 right-4 text-white">
-                        <span class="bg-palette-ember-600 text-[10px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wider">${escapeHtml(v.category)}</span>
+                        <span class="bg-palette-ember-600 text-[10px] font-bold px-2 py-0.5 rounded-md">${escapeHtml(v.category)}</span>
                         <h2 class="text-xl sm:text-2xl font-black mt-1 leading-tight">${escapeHtml(v.name)}</h2>
                         <p class="text-xs text-palette-cream flex items-center gap-1 mt-0.5">
                             <i class="fa-solid fa-location-dot text-palette-ember-400"></i>${escapeHtml(v.address)}
@@ -902,8 +910,8 @@
                         </div>
                         <div class="border-x border-palette-cream">
                             <div class="text-palette-matcha/40 font-semibold text-[10px]">Điểm Vệ Sinh</div>
-                            <div class="font-bold text-emerald-600 text-xs sm:text-sm mt-0.5 flex items-center justify-center gap-1">
-                                <i class="fa-solid fa-shield-halved"></i>${v.hygieneScore}/5.0
+                            <div class="font-bold ${v.hygieneScore !== null ? 'text-emerald-600' : 'text-palette-matcha/40'} text-xs sm:text-sm mt-0.5 flex items-center justify-center gap-1">
+                                ${v.hygieneScore !== null ? `<i class="fa-solid fa-shield-halved"></i>${v.hygieneScore}/5.0` : 'Chưa có'}
                             </div>
                         </div>
                         <div>
