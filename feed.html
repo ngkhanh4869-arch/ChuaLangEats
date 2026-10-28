@@ -83,7 +83,7 @@
     <!-- FOOTER -->
     <footer class="bg-palette-matcha text-palette-cream text-center text-xs py-4 space-y-1">
         <p>© 2026 Chùa Láng Student Community</p>
-        <a href="https://github.com/ngkhanh4869-arch/ChuaLangEats" target="_blank" rel="noopener noreferrer"
+        <a href="https://www.facebook.com/share/1Gpo1Cmrgr/?mibextid=wwXIfr" target="_blank" rel="noopener noreferrer"
            class="block text-palette-cream/50 hover:text-palette-cream underline decoration-dotted underline-offset-4 transition">
             Một dự án Tư duy Thiết kế (Design Thinking) của sinh viên FTU, DAV & VYA
         </a>
@@ -239,9 +239,26 @@
                         ${images.map((img) => `
                         <div class="snap-center shrink-0 w-full relative">
                             <img src="${img.url}" class="w-full h-60 object-cover" loading="lazy" alt="${escapeHtml(spot.name)}">
-                            ${img.isMenu ? `<span class="absolute top-2 left-2 bg-palette-matcha text-white text-[10px] font-bold px-2 py-1 rounded-full">📋 Ảnh Menu / Bảng Giá</span>` : ""}
+                            ${img.isMenu ? `<span class="absolute bottom-3 right-3 bg-palette-matcha text-white text-[10px] font-bold px-2 py-1 rounded-full">📋 Ảnh Menu / Bảng Giá</span>` : ""}
                         </div>`).join("")}
                     </div>
+
+                    <!-- Fixed overlay: stays in place while the gallery scrolls beneath it -->
+                    <div class="absolute top-3 left-3 bg-palette-matcha/80 backdrop-blur-md text-white text-[11px] font-bold px-2.5 py-1 rounded-lg pointer-events-none">
+                        <i class="fa-solid fa-tag text-palette-ember-400 mr-1"></i>${formatVnd(spot.min_price)} - ${formatVnd(spot.max_price)} VNĐ
+                    </div>
+                    ${spot.distance_minutes != null ? `
+                    <div class="absolute top-3 right-3 bg-white/90 backdrop-blur-md text-palette-matcha text-[11px] font-bold px-2 py-1 rounded-lg flex items-center gap-1 shadow-sm pointer-events-none">
+                        <i class="fa-solid fa-person-walking text-palette-ember"></i>${spot.distance_minutes} phút đi bộ
+                    </div>` : ""}
+                    ${avgHygiene != null ? `
+                    <div class="absolute bottom-3 left-3 bg-emerald-600/90 text-white text-[10px] font-bold px-2 py-0.5 rounded-md flex items-center gap-1 backdrop-blur-sm pointer-events-none">
+                        <i class="fa-solid fa-shield-halved"></i>Sạch Sẽ: ${avgHygiene.toFixed(1)}/5.0
+                    </div>` : `
+                    <div class="absolute bottom-3 left-3 bg-palette-matcha/70 text-white text-[10px] font-bold px-2 py-0.5 rounded-md flex items-center gap-1 backdrop-blur-sm pointer-events-none">
+                        <i class="fa-solid fa-sparkles"></i>Mới thêm
+                    </div>`}
+
                     ${images.length > 1 ? `
                     <button type="button" class="gallery-prev absolute left-2 top-1/2 -translate-y-1/2 w-7 h-7 bg-white/90 rounded-full shadow text-sm flex items-center justify-center">‹</button>
                     <button type="button" class="gallery-next absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 bg-white/90 rounded-full shadow text-sm flex items-center justify-center">›</button>
@@ -251,16 +268,16 @@
                 </div>` : ""}
 
                 <div class="p-4 space-y-3 text-xs">
-                    <div>
+                    <div class="flex items-start justify-between gap-2">
                         <h2 class="font-bold text-base">${escapeHtml(spot.name)}</h2>
-                        <p class="text-palette-matcha/60">${escapeHtml(spot.address || "")}${spot.distance_minutes != null ? ` · ${spot.distance_minutes} phút đi bộ` : ""}</p>
+                        ${avgQuality != null ? `
+                        <div class="flex items-center text-palette-yolk font-bold text-xs shrink-0">
+                            <i class="fa-solid fa-star text-xs mr-0.5"></i>${avgQuality.toFixed(1)}
+                            <span class="text-palette-matcha/40 font-normal text-[10px] ml-0.5">(${reviewCount})</span>
+                        </div>` : `
+                        <span class="text-palette-matcha/40 font-semibold text-[10px] shrink-0">Chưa có đánh giá</span>`}
                     </div>
-
-                    <div class="flex items-center gap-2 flex-wrap">
-                        <span class="text-[11px] font-bold px-2.5 py-1 rounded-full bg-palette-ember/10 text-palette-ember">${formatVnd(spot.min_price)} - ${formatVnd(spot.max_price)} VNĐ</span>
-                        <span class="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-palette-tofu border border-palette-cream">🛡️ Sạch Sẽ: ${avgHygiene != null ? avgHygiene.toFixed(1) + "/5.0" : "Chưa có đánh giá"}</span>
-                        <span class="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-palette-tofu border border-palette-cream">⭐ Chất Lượng: ${avgQuality != null ? avgQuality.toFixed(1) + "/5.0" : "Chưa có đánh giá"}</span>
-                    </div>
+                    <p class="text-palette-matcha/60">${escapeHtml(spot.address || "")}</p>
 
                     ${spot.description ? `<p class="leading-relaxed">${escapeHtml(spot.description)}</p>` : ""}
 
