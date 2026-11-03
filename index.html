@@ -74,48 +74,13 @@
         .vendor-card:hover { transform: translateY(-3px); }
     </style>
 </head>
-<body class="bg-palette-tofu text-palette-matcha font-sans antialiased min-h-screen flex flex-col">
+<body class="bg-palette-tofu text-palette-matcha font-sans antialiased min-h-screen">
 
-    <!-- HEADER / NAVIGATION -->
-    <header class="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-palette-cream shadow-sm">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between h-16">
-                <!-- Logo & Campus Tag -->
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-palette-ember-500 to-palette-yolk-500 flex items-center justify-center shadow-md shadow-palette-ember-200 p-2">
-                        <img src="assets/logo-mark.png" alt="ChùaLángEats" class="w-full h-full object-contain">
-                    </div>
-                    <div>
-                        <div class="flex items-center gap-2">
-                            <h1 class="text-lg font-bold tracking-tight text-palette-matcha leading-none">ChùaLáng<span class="text-palette-ember-600">Eats</span></h1>
-                            <span class="bg-palette-ember-100 text-palette-ember-800 text-[10px] font-bold px-2 py-0.5 rounded-full">FTU • DAV • VYA</span>
-                        </div>
-                        <p class="text-xs text-palette-matcha/55 mt-0.5">Tìm quán ngon, rẻ, sạch quanh Chùa Láng</p>
-                    </div>
-                </div>
+    <!-- SHARED APP NAVIGATION (sidebar / drawer, see js/nav.js) -->
+    <div id="app-nav"></div>
+    <script type="module" src="js/nav.js"></script>
 
-                <!-- Action Buttons & User Header -->
-                <div class="flex items-center gap-2 sm:gap-3">
-                    <a href="add-spot.html" class="inline-flex items-center gap-1.5 bg-palette-tofu hover:bg-palette-cream text-palette-matcha/80 text-xs sm:text-sm font-semibold px-3 py-2 rounded-xl transition">
-                        <i class="fa-solid fa-plus text-palette-ember-600"></i>
-                        <span class="hidden sm:inline">Thêm Quán</span>
-                    </a>
-                    <button onclick="openReviewModal()" class="inline-flex items-center gap-2 bg-palette-ember-600 hover:bg-palette-ember-700 text-white text-xs sm:text-sm font-semibold px-3 sm:px-4 py-2 rounded-xl transition shadow-sm hover:shadow-palette-ember-100">
-                        <i class="fa-solid fa-pen-to-square text-xs"></i>
-                        <span class="hidden sm:inline">Viết Đánh Giá</span>
-                        <span class="sm:hidden">Đánh giá</span>
-                    </button>
-                    <button onclick="toggleMapView()" id="mapToggleBtn" class="inline-flex items-center gap-2 bg-palette-tofu hover:bg-palette-cream text-palette-matcha/80 text-xs sm:text-sm font-semibold px-3 py-2 rounded-xl transition">
-                        <i class="fa-solid fa-map-location-dot text-palette-ember-600"></i>
-                        <span class="hidden md:inline" id="mapToggleText">Xem Bản Đồ</span>
-                    </button>
-                    <div id="authArea" class="ml-1 sm:ml-2">
-                        <!-- Populated by JS -->
-                    </div>
-                </div>
-            </div>
-        </div>
-    </header>
+    <div id="appContent" class="lg:pl-64 min-h-screen flex flex-col">
 
     <!-- HERO BANNER / SPECIAL DEALS CAROUSEL -->
     <section class="bg-gradient-to-r from-palette-ember-600 via-palette-ember-500 to-palette-yolk-500 text-white py-6 shadow-inner">
@@ -151,7 +116,20 @@
 
     <!-- MAIN CONTENT AREA -->
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-grow w-full">
-        
+
+        <!-- PAGE ACTIONS -->
+        <div class="flex flex-wrap items-center justify-end gap-2 mb-4">
+            <button onclick="openReviewModal()" class="inline-flex items-center gap-2 bg-palette-ember-600 hover:bg-palette-ember-700 text-white text-xs sm:text-sm font-semibold px-3 sm:px-4 py-2 rounded-xl transition shadow-sm hover:shadow-palette-ember-100">
+                <i class="fa-solid fa-pen-to-square text-xs"></i>
+                <span class="hidden sm:inline">Viết Đánh Giá</span>
+                <span class="sm:hidden">Đánh giá</span>
+            </button>
+            <button onclick="toggleMapView()" id="mapToggleBtn" class="inline-flex items-center gap-2 bg-palette-tofu hover:bg-palette-cream text-palette-matcha/80 text-xs sm:text-sm font-semibold px-3 py-2 rounded-xl transition">
+                <i class="fa-solid fa-map-location-dot text-palette-ember-600"></i>
+                <span class="hidden md:inline" id="mapToggleText">Xem Bản Đồ</span>
+            </button>
+        </div>
+
         <!-- SEARCH & FILTER BAR -->
         <div class="bg-white p-4 rounded-2xl shadow-sm border border-palette-cream mb-6 space-y-4">
             <!-- Search input -->
@@ -365,6 +343,9 @@
         </div>
     </footer>
 
+    </div>
+    <!-- /content wrapper -->
+
     <!-- Leaflet JS for Map -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
@@ -395,25 +376,6 @@
                 const { user, profile } = await getCurrentUser();
                 currentUser = user;
                 currentProfile = profile;
-
-                const authArea = document.getElementById("authArea");
-                if (authArea) {
-                    if (user) {
-                        const name = profile?.username || "Thành viên";
-                        const initial = name.charAt(0).toUpperCase();
-                        const badge = profile?.badge || "Sinh Viên";
-                        authArea.innerHTML = `
-                            <a href="profile.html" class="flex items-center gap-1.5 font-semibold text-xs text-palette-matcha/80 hover:text-palette-ember-600 bg-palette-tofu hover:bg-palette-cream px-2.5 py-1.5 rounded-xl transition">
-                                <span class="w-5 h-5 rounded-full bg-palette-ember-600 text-white flex items-center justify-center text-[10px] font-bold">${initial}</span>
-                                <span class="hidden sm:inline">${escapeHtml(badge)}</span>
-                            </a>`;
-                    } else {
-                        authArea.innerHTML = `
-                            <a href="login.html" class="bg-palette-ember-600 hover:bg-palette-ember-700 text-white text-xs font-bold px-3 py-2 rounded-xl transition shadow-sm">
-                                Đăng Nhập
-                            </a>`;
-                    }
-                }
             } catch (err) {
                 console.error("Auth check error:", err);
             }
