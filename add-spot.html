@@ -62,19 +62,21 @@
                     <div>
                         <label for="category" class="block font-semibold mb-1">Danh Mục *</label>
                         <select id="category" required class="w-full bg-palette-tofu border border-palette-cream rounded-xl p-3 font-medium focus:ring-2 focus:ring-palette-ember focus:outline-none">
-                            <option value="Ăn Trưa">Ăn Trưa</option>
-                            <option value="Ăn Sáng">Ăn Sáng</option>
-                            <option value="Ăn Tối">Ăn Tối</option>
-                            <option value="Ăn Vặt">Ăn Vặt</option>
-                            <option value="Cà Phê / Trà Sữa">Cà Phê / Trà Sữa</option>
+                            <option value="Cơm/Bún/Phở">Cơm / Bún / Phở / Miến</option>
+                            <option value="Ăn Vặt">Ăn Vặt / Vỉa Hè</option>
+                            <option value="Cà Phê/Trà Sữa">Cà Phê / Trà Sữa</option>
+                            <option value="Đồ Uống">Đồ Uống / Giải Khát</option>
+                            <option value="Bánh/Tráng Miệng">Bánh / Tráng Miệng</option>
+                            <option value="Khác">Khác</option>
                         </select>
                     </div>
                     <div>
                         <label for="mealType" class="block font-semibold mb-1">Bữa Ăn *</label>
                         <select id="mealType" required class="w-full bg-palette-tofu border border-palette-cream rounded-xl p-3 font-medium focus:ring-2 focus:ring-palette-ember focus:outline-none">
-                            <option value="lunch">Cơm / Bún / Phở</option>
-                            <option value="snack">Ăn Nhẹ / Đồ Uống</option>
-                            <option value="breakfast">Ăn Sáng Nhanh</option>
+                            <option value="breakfast">Ăn Sáng</option>
+                            <option value="lunch" selected>Ăn Trưa</option>
+                            <option value="dinner">Ăn Tối</option>
+                            <option value="snack">Ăn Vặt / Giữa Giờ</option>
                         </select>
                     </div>
                 </div>
@@ -95,10 +97,21 @@
                     <input type="number" id="distanceMinutes" required min="0" placeholder="3" class="w-full bg-palette-tofu border border-palette-cream rounded-xl p-3 font-medium focus:ring-2 focus:ring-palette-ember focus:outline-none">
                 </div>
 
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label for="openTime" class="block font-semibold mb-1">Giờ Mở Cửa</label>
+                        <input type="time" id="openTime" class="w-full bg-palette-tofu border border-palette-cream rounded-xl p-3 font-medium focus:ring-2 focus:ring-palette-ember focus:outline-none">
+                    </div>
+                    <div>
+                        <label for="closeTime" class="block font-semibold mb-1">Giờ Đóng Cửa</label>
+                        <input type="time" id="closeTime" class="w-full bg-palette-tofu border border-palette-cream rounded-xl p-3 font-medium focus:ring-2 focus:ring-palette-ember focus:outline-none">
+                    </div>
+                </div>
+
                 <!-- Location picker -->
                 <div>
                     <p class="font-semibold mb-1">Vị Trí Trên Bản Đồ *</p>
-                    <p class="text-[11px] text-palette-matcha/50 mb-2">Bấm vào bản đồ để đánh dấu đúng vị trí quán, hoặc dùng vị trí hiện tại của bạn. Có thể kéo ghim để chỉnh lại.</p>
+                    <p class="text-[11px] text-palette-matcha/50 mb-2">Điền địa chỉ ở trên là bản đồ sẽ tự tìm vị trí. Bạn cũng có thể bấm vào bản đồ, dùng vị trí hiện tại, hoặc kéo ghim để chỉnh lại cho đúng.</p>
                     <div class="flex items-center justify-between mb-2">
                         <span id="locationStatus" class="text-[11px] font-semibold text-palette-matcha/60">Chưa chọn vị trí</span>
                         <button type="button" id="useCurrentLocationBtn" class="text-[11px] font-bold text-palette-ember hover:underline">📍 Dùng vị trí hiện tại</button>
@@ -301,6 +314,53 @@
 
         initLocationPicker();
 
+        // ---------------------------------------------------------------
+        // Auto-locate from the typed address (geocoding via OpenStreetMap
+        // Nominatim, no API key needed). Runs after the user stops typing
+        // and again on blur, so the pin updates without extra clicks.
+        // If nothing is found, we ask for a more detailed address instead
+        // of failing silently.
+        // ---------------------------------------------------------------
+        let geocodeDebounce = null;
+        const addressInput = document.getElementById("address");
+
+        async function geocodeAddress(rawAddress) {
+            const address = rawAddress.trim();
+            const locationError = document.getElementById("locationError");
+            if (address.length < 8) return; // too short to be worth a lookup
+
+            try {
+                const query = encodeURIComponent(`${address}, Chùa Láng, Đống Đa, Hà Nội, Việt Nam`);
+                const res = await fetch(
+                    `https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=vn&q=${query}`,
+                    { headers: { "Accept-Language": "vi" } }
+                );
+                const results = await res.json();
+
+                if (!results || results.length === 0) {
+                    if (locationError) {
+                        locationError.textContent = "Không tự định vị được từ địa chỉ này. Vui lòng điền thêm chi tiết (số nhà, ngõ/ngách) hoặc chọn thủ công trên bản đồ.";
+                        locationError.classList.remove("hidden");
+                    }
+                    return;
+                }
+
+                const { lat, lon } = results[0];
+                locationMap.setView([parseFloat(lat), parseFloat(lon)], 17);
+                setPickedLocation(parseFloat(lat), parseFloat(lon));
+            } catch (err) {
+                // Network hiccup or Nominatim unavailable — fail quietly,
+                // the user can still pin the spot manually.
+                console.warn("Không thể tự định vị địa chỉ:", err);
+            }
+        }
+
+        addressInput?.addEventListener("blur", () => geocodeAddress(addressInput.value));
+        addressInput?.addEventListener("input", () => {
+            clearTimeout(geocodeDebounce);
+            geocodeDebounce = setTimeout(() => geocodeAddress(addressInput.value), 1200);
+        });
+
         document.getElementById("useCurrentLocationBtn")?.addEventListener("click", () => {
             if (!navigator.geolocation) {
                 alert("Trình duyệt của bạn không hỗ trợ định vị.");
@@ -371,6 +431,8 @@
                 minPrice,
                 maxPrice,
                 distanceMinutes: Number(document.getElementById("distanceMinutes").value) || 5,
+                openTime: document.getElementById("openTime").value || null,
+                closeTime: document.getElementById("closeTime").value || null,
                 lat: pickedLat,
                 lng: pickedLng,
                 description: document.getElementById("description").value.trim(),
