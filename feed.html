@@ -251,6 +251,10 @@
                         <span class="text-palette-matcha/40 font-semibold text-[10px] shrink-0">Chưa có đánh giá</span>`}
                     </div>
                     <p class="text-palette-matcha/60">${escapeHtml(spot.address || "")}</p>
+                    ${spot.opening_time || spot.closing_time ? `
+                    <p class="text-palette-matcha/60 flex items-center gap-1">
+                        <i class="fa-solid fa-clock text-palette-ember text-[11px]"></i>${escapeHtml((spot.opening_time || "?").slice(0, 5))} - ${escapeHtml((spot.closing_time || "?").slice(0, 5))}
+                    </p>` : ""}
 
                     ${spot.description ? `<p class="leading-relaxed">${escapeHtml(spot.description)}</p>` : ""}
 
