@@ -28,18 +28,13 @@
         }
     </script>
 </head>
-<body class="bg-palette-tofu text-palette-matcha min-h-screen flex flex-col justify-between">
+<body class="bg-palette-tofu text-palette-matcha min-h-screen">
 
-    <!-- NAVBAR -->
-    <header class="bg-white border-b border-palette-cream py-4">
-        <div class="max-w-7xl mx-auto px-4 flex justify-between items-center">
-            <a href="index.html" class="flex items-center gap-2 text-lg font-bold">
-                <span class="w-8 h-8 rounded-lg bg-palette-ember flex items-center justify-center p-1.5"><img src="assets/logo-mark.png" alt="ChùaLángEats" class="w-full h-full object-contain"></span>
-                <span>ChùaLáng<span class="text-palette-ember">Eats</span></span>
-            </a>
-            <a href="index.html" class="text-xs font-semibold text-palette-matcha/70 hover:text-palette-ember">← Quay lại Trang Chủ</a>
-        </div>
-    </header>
+    <!-- SHARED APP NAVIGATION (sidebar / drawer, see js/nav.js) -->
+    <div id="app-nav"></div>
+    <script type="module" src="js/nav.js"></script>
+
+    <div id="appContent" class="lg:pl-64 min-h-screen flex flex-col">
 
     <!-- AUTH CONTAINER -->
     <main class="flex-grow flex items-center justify-center p-4">
@@ -100,6 +95,9 @@
             Một dự án Tư duy Thiết kế (Design Thinking) của sinh viên FTU, DAV & VYA
         </a>
     </footer>
+
+    </div>
+    <!-- /content wrapper -->
 
     <!-- TAB SWITCHER FUNCTION -->
     <script>
