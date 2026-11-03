@@ -179,6 +179,7 @@
                         <option value="all">Tất cả thời gian</option>
                         <option value="breakfast">Ăn sáng nhanh (6h - 9h)</option>
                         <option value="lunch">Ăn trưa (11h - 13h30)</option>
+                        <option value="dinner">Ăn tối (17h - 20h)</option>
                         <option value="snack">Ăn vặt / Chiều</option>
                     </select>
                 </div>
@@ -283,7 +284,7 @@
                 <!-- Actual Price Paid -->
                 <div>
                     <label class="block font-semibold text-palette-matcha/80 mb-1">Giá thực tế bạn đã trả (VNĐ) *</label>
-                    <input type="number" id="reviewPrice" required placeholder="Ví dụ: 25000" min="5000" max="200000" class="w-full bg-palette-tofu border border-palette-cream rounded-xl p-2.5 font-medium text-palette-matcha focus:ring-2 focus:ring-palette-ember-500 focus:outline-none">
+                    <input type="number" id="reviewPrice" required placeholder="Ví dụ: 25000" min="5000" class="w-full bg-palette-tofu border border-palette-cream rounded-xl p-2.5 font-medium text-palette-matcha focus:ring-2 focus:ring-palette-ember-500 focus:outline-none">
                 </div>
 
                 <!-- Review Comment -->
@@ -440,12 +441,14 @@
                 return {
                     id: spot.id,
                     name: spot.name || "Quán Ăn Chùa Láng",
-                    category: spot.category || "Ăn Trưa",
+                    category: spot.category || "Cơm/Bún/Phở",
                     mealType: spot.meal_type || spot.mealType || "lunch",
                     price: minP || 20000,
                     priceText: priceText,
                     address: spot.address || "Chùa Láng, Đống Đa, Hà Nội",
                     distanceMinutes: spot.distance_minutes || 5,
+                    openTime: spot.opening_time ? spot.opening_time.slice(0, 5) : null,
+                    closeTime: spot.closing_time ? spot.closing_time.slice(0, 5) : null,
                     lat: typeof spot.lat === 'number' ? spot.lat : null,
                     lng: typeof spot.lng === 'number' ? spot.lng : null,
                     hygieneScore: hygieneScore,
@@ -521,6 +524,10 @@
                                 <p class="text-[11px] text-palette-matcha/55 flex items-center gap-1 truncate">
                                     <i class="fa-solid fa-location-dot text-palette-ember-500 text-xs shrink-0"></i>${escapeHtml(vendor.address)}
                                 </p>
+                                ${vendor.openTime || vendor.closeTime ? `
+                                <p class="text-[11px] text-palette-matcha/55 flex items-center gap-1">
+                                    <i class="fa-solid fa-clock text-palette-ember-500 text-xs shrink-0"></i>${escapeHtml(vendor.openTime || "?")} - ${escapeHtml(vendor.closeTime || "?")}
+                                </p>` : ""}
 
                                 <p class="text-xs text-palette-matcha/70 line-clamp-2 leading-relaxed pt-1">
                                     ${escapeHtml(vendor.description)}
@@ -859,6 +866,10 @@
                         <p class="text-xs text-palette-cream flex items-center gap-1 mt-0.5">
                             <i class="fa-solid fa-location-dot text-palette-ember-400"></i>${escapeHtml(v.address)}
                         </p>
+                        ${v.openTime || v.closeTime ? `
+                        <p class="text-xs text-palette-cream flex items-center gap-1 mt-0.5">
+                            <i class="fa-solid fa-clock text-palette-ember-400"></i>${escapeHtml(v.openTime || "?")} - ${escapeHtml(v.closeTime || "?")}
+                        </p>` : ""}
                     </div>
                 </div>
 
