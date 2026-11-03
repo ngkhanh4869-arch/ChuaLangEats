@@ -249,12 +249,15 @@
 
             <!-- Modal Form Body -->
             <form id="reviewForm" onsubmit="handleReviewSubmit(event)" class="p-4 sm:p-5 space-y-4 text-xs">
-                <!-- Select Vendor -->
-                <div>
-                    <label class="block font-semibold text-palette-matcha/80 mb-1">Chọn Quán Ăn *</label>
-                    <select id="reviewVendorSelect" required class="w-full bg-palette-tofu border border-palette-cream rounded-xl p-2.5 font-medium text-palette-matcha focus:ring-2 focus:ring-palette-ember-500 focus:outline-none">
-                        <!-- Populated by JS -->
-                    </select>
+                <!-- Select Vendor (searchable combobox) -->
+                <div class="relative">
+                    <label for="reviewVendorSearch" class="block font-semibold text-palette-matcha/80 mb-1">Chọn Quán Ăn *</label>
+                    <input type="text" id="reviewVendorSearch" autocomplete="off" required
+                        placeholder="Gõ tên quán để tìm..."
+                        class="w-full bg-palette-tofu border border-palette-cream rounded-xl p-2.5 font-medium text-palette-matcha focus:ring-2 focus:ring-palette-ember-500 focus:outline-none">
+                    <input type="hidden" id="reviewVendorId" value="">
+                    <div id="reviewVendorResults" class="hidden absolute z-20 left-0 right-0 mt-1 bg-white border border-palette-cream rounded-xl shadow-lg max-h-48 overflow-y-auto"></div>
+                    <p id="reviewVendorEmpty" class="hidden text-palette-matcha/40 text-[11px] mt-1">Không tìm thấy quán nào khớp.</p>
                 </div>
 
                 <!-- Rating Scales Grid -->
@@ -369,6 +372,20 @@
             await checkAuth();
             await loadSpotsFromSupabase();
             focusSpotFromQuery();
+
+            const vendorSearchInput = document.getElementById("reviewVendorSearch");
+            vendorSearchInput?.addEventListener("input", () => {
+                document.getElementById("reviewVendorId").value = "";
+                renderReviewVendorResults(vendorSearchInput.value);
+            });
+            vendorSearchInput?.addEventListener("focus", () => {
+                renderReviewVendorResults(vendorSearchInput.value);
+            });
+            document.addEventListener("click", (e) => {
+                if (!e.target.closest("#reviewVendorSearch") && !e.target.closest("#reviewVendorResults")) {
+                    hideReviewVendorResults();
+                }
+            });
         });
 
         // 1. Auth Status Check
@@ -462,7 +479,6 @@
                 };
             });
 
-            populateVendorSelectModal();
             applyFilters();
         }
 
@@ -718,11 +734,54 @@
         }
 
         // 6. Modal Controls & Review Submission
-        function populateVendorSelectModal() {
-            const select = document.getElementById("reviewVendorSelect");
-            if (select) {
-                select.innerHTML = vendors.map(v => `<option value="${v.id}">${escapeHtml(v.name)} (${escapeHtml(v.priceText)})</option>`).join('');
+
+        // --- Searchable vendor combobox (client-side filter over `vendors`,
+        //     which is already loaded in memory — no extra fetch needed) ---
+        function hideReviewVendorResults() {
+            document.getElementById("reviewVendorResults")?.classList.add("hidden");
+            document.getElementById("reviewVendorEmpty")?.classList.add("hidden");
+        }
+
+        function selectReviewVendor(vendor) {
+            const idInput = document.getElementById("reviewVendorId");
+            const searchInput = document.getElementById("reviewVendorSearch");
+            if (idInput) idInput.value = vendor.id;
+            if (searchInput) searchInput.value = `${vendor.name} (${vendor.priceText})`;
+            hideReviewVendorResults();
+        }
+
+        function renderReviewVendorResults(rawQuery) {
+            const resultsBox = document.getElementById("reviewVendorResults");
+            const emptyMsg = document.getElementById("reviewVendorEmpty");
+            if (!resultsBox) return;
+
+            const query = rawQuery.toLowerCase().trim();
+            const matches = query
+                ? vendors.filter(v => v.name.toLowerCase().includes(query) || v.address.toLowerCase().includes(query))
+                : vendors;
+
+            if (matches.length === 0) {
+                resultsBox.classList.add("hidden");
+                resultsBox.innerHTML = "";
+                emptyMsg?.classList.remove("hidden");
+                return;
             }
+
+            emptyMsg?.classList.add("hidden");
+            resultsBox.innerHTML = matches.slice(0, 30).map(v => `
+                <button type="button" data-vendor-id="${v.id}" class="review-vendor-option w-full text-left px-3 py-2 hover:bg-palette-tofu border-b border-palette-cream/60 last:border-b-0">
+                    <span class="block font-semibold text-palette-matcha">${escapeHtml(v.name)}</span>
+                    <span class="block text-[11px] text-palette-matcha/50 truncate">${escapeHtml(v.address)} · ${escapeHtml(v.priceText)}</span>
+                </button>
+            `).join("");
+            resultsBox.classList.remove("hidden");
+
+            resultsBox.querySelectorAll(".review-vendor-option").forEach(btn => {
+                btn.addEventListener("click", () => {
+                    const vendor = vendors.find(v => v.id === parseInt(btn.dataset.vendorId));
+                    if (vendor) selectReviewVendor(vendor);
+                });
+            });
         }
 
         function openReviewModal(vendorId) {
@@ -733,11 +792,15 @@
                 return;
             }
 
-            populateVendorSelectModal();
-            if (vendorId && document.getElementById("reviewVendorSelect")) {
-                document.getElementById("reviewVendorSelect").value = vendorId;
+            document.getElementById("reviewVendorId").value = "";
+            document.getElementById("reviewVendorSearch").value = "";
+            hideReviewVendorResults();
+
+            if (vendorId) {
+                const vendor = vendors.find(v => v.id === vendorId);
+                if (vendor) selectReviewVendor(vendor);
             }
-            
+
             const badgeNotice = document.getElementById("badgeNotice");
             if (badgeNotice) {
                 const badge = currentProfile?.badge || "Sinh Viên Verified";
@@ -749,6 +812,7 @@
 
         function closeReviewModal() {
             document.getElementById("reviewModal")?.classList.add("hidden");
+            hideReviewVendorResults();
         }
 
         function setRating(type, val) {
@@ -776,13 +840,13 @@
                 return;
             }
 
-            const vendorId = parseInt(document.getElementById("reviewVendorSelect").value);
+            const vendorId = parseInt(document.getElementById("reviewVendorId").value);
             const pricePaid = document.getElementById("reviewPrice").value;
             const comment = document.getElementById("reviewComment").value;
             const submitBtn = document.getElementById("submitReviewBtn");
 
             if (!vendorId || !pricePaid) {
-                alert("Vui lòng điền đầy đủ các thông tin bắt buộc.");
+                alert("Vui lòng chọn một quán ăn từ danh sách gợi ý và điền đầy đủ các thông tin bắt buộc.");
                 return;
             }
 
@@ -809,6 +873,8 @@
                 closeReviewModal();
                 
                 // Clear form inputs
+                document.getElementById("reviewVendorSearch").value = "";
+                document.getElementById("reviewVendorId").value = "";
                 document.getElementById("reviewPrice").value = "";
                 document.getElementById("reviewComment").value = "";
                 
