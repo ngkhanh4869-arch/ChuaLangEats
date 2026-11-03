@@ -33,22 +33,13 @@
         }
     </script>
 </head>
-<body class="bg-palette-tofu text-palette-matcha font-sans antialiased min-h-screen flex flex-col justify-between">
+<body class="bg-palette-tofu text-palette-matcha font-sans antialiased min-h-screen">
 
-    <!-- NAVBAR -->
-    <header class="bg-white border-b border-palette-cream sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-            <a href="index.html" class="flex items-center gap-2 font-bold text-lg">
-                <span class="w-8 h-8 rounded-lg bg-palette-ember flex items-center justify-center p-1.5"><img src="assets/logo-mark.png" alt="ChùaLángEats" class="w-full h-full object-contain"></span>
-                <span>ChùaLáng<span class="text-palette-ember">Eats</span></span>
-            </a>
-            <div class="flex items-center gap-4 text-xs font-semibold">
-                <a href="feed.html" class="hover:text-palette-ember">📱 Feed</a>
-                <a href="add-spot.html" class="hover:text-palette-ember">➕ Thêm Quán</a>
-                <button type="button" onclick="handleLogout()" class="bg-palette-cream text-palette-ember px-3 py-1.5 rounded-lg border border-palette-yolk/30 hover:bg-palette-yolk/20 transition">Đăng Xuất</button>
-            </div>
-        </div>
-    </header>
+    <!-- SHARED APP NAVIGATION (sidebar / drawer, see js/nav.js) -->
+    <div id="app-nav"></div>
+    <script type="module" src="js/nav.js"></script>
+
+    <div id="appContent" class="lg:pl-64 min-h-screen flex flex-col">
 
     <!-- PROFILE CONTENT -->
     <main class="flex-grow max-w-3xl mx-auto w-full px-4 py-8 sm:py-10">
@@ -114,8 +105,11 @@
         </a>
     </footer>
 
+    </div>
+    <!-- /content wrapper -->
+
     <script type="module">
-        import { supabase, getCurrentUser, signOutUser, deleteItem } from './js/supabase.js';
+        import { supabase, getCurrentUser, deleteItem } from './js/supabase.js';
 
         let currentUser = null;
         let currentProfile = null;
@@ -323,11 +317,6 @@
             } else {
                 loadMyReviews();
             }
-        };
-
-        window.handleLogout = async function() {
-            await signOutUser();
-            window.location.href = "login.html";
         };
 
         function escapeHtml(str) {
