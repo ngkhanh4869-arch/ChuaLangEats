@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản Trị - ChùaLángEats</title>
+    <link rel="icon" type="image/png" href="assets/favicon.png">
+    <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        palette: {
+                            ember: '#EE3F24',
+                            cream: '#FFEFCB',
+                            matcha: '#023820',
+                            yolk: '#F9A11B',
+                            tofu: '#FFF4E6',
+                        }
+                    },
+                    fontFamily: { sans: ['Inter', 'sans-serif'] }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-palette-tofu text-palette-matcha font-sans antialiased min-h-screen">
+
+    <!-- SHARED APP NAVIGATION (sidebar / drawer, see js/nav.js) -->
+    <div id="app-nav"></div>
+    <script type="module" src="js/nav.js"></script>
+
+    <div id="appContent" class="lg:pl-64 min-h-screen flex flex-col">
+
+        <!-- Shown while checking auth, and for non-admins -->
+        <div id="accessGate" class="hidden flex-grow flex items-center justify-center text-center px-6 py-20"></div>
+
+        <!-- Main dashboard, shown only once an admin session is confirmed -->
+        <div id="adminApp" class="hidden flex-grow flex flex-col">
+
+            <header class="bg-white border-b border-palette-cream">
+                <div class="max-w-5xl mx-auto px-4 py-6 w-full">
+                    <p class="text-xs font-bold uppercase tracking-wide text-palette-matcha/50">Chùa Láng Eats</p>
+                    <h1 class="text-xl font-bold">Bảng Điều Khiển Quản Trị</h1>
+
+                    <dl class="mt-5 grid grid-cols-2 sm:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-palette-cream border border-palette-cream rounded-2xl overflow-hidden">
+                        <div class="px-5 py-4">
+                            <dt class="text-xs text-palette-matcha/50 font-medium">Lượt ghé hôm nay</dt>
+                            <dd class="text-2xl font-bold mt-1">—</dd>
+                            <p class="text-[11px] text-palette-matcha/30 mt-0.5">Chưa kết nối analytics</p>
+                        </div>
+                        <div class="px-5 py-4">
+                            <dt class="text-xs text-palette-matcha/50 font-medium">Đang hoạt động</dt>
+                            <dd class="text-2xl font-bold mt-1">—</dd>
+                            <p class="text-[11px] text-palette-matcha/30 mt-0.5">Chưa kết nối analytics</p>
+                        </div>
+                        <div class="px-5 py-4">
+                            <dt class="text-xs text-palette-matcha/50 font-medium">Tổng số quán</dt>
+                            <dd id="statTotalSpots" class="text-2xl font-bold mt-1">…</dd>
+                        </div>
+                        <div id="statPendingReportsWrap" class="px-5 py-4">
+                            <dt class="text-xs text-palette-matcha/50 font-medium">Báo cáo chờ xử lý</dt>
+                            <dd id="statPendingReports" class="text-2xl font-bold mt-1">…</dd>
+                        </div>
+                    </dl>
+                </div>
+            </header>
+
+            <nav class="bg-white border-b border-palette-cream">
+                <div class="max-w-5xl mx-auto px-4 flex gap-5 overflow-x-auto">
+                    <button type="button" data-tab="analytics" class="tab-btn flex items-center gap-1.5 py-3 text-sm font-semibold border-b-2 border-palette-matcha text-palette-matcha whitespace-nowrap">📊 Phân Tích</button>
+                    <button type="button" data-tab="users" class="tab-btn flex items-center gap-1.5 py-3 text-sm font-semibold border-b-2 border-transparent text-palette-matcha/50 hover:text-palette-matcha whitespace-nowrap">👥 Người Dùng</button>
+                    <button type="button" data-tab="reports" class="tab-btn flex items-center gap-1.5 py-3 text-sm font-semibold border-b-2 border-transparent text-palette-matcha/50 hover:text-palette-matcha whitespace-nowrap">
+                        🚩 Báo Cáo
+                        <span id="reportsBadge" class="hidden ml-0.5 inline-flex items-center justify-center h-5 min-w-[1.25rem] px-1 rounded-full bg-palette-ember text-white text-[11px] font-bold"></span>
+                    </button>
+                    <button type="button" data-tab="stores" class="tab-btn flex items-center gap-1.5 py-3 text-sm font-semibold border-b-2 border-transparent text-palette-matcha/50 hover:text-palette-matcha whitespace-nowrap">
+                        🍜 Quán Ăn
+                        <span id="storesBadge" class="hidden ml-0.5 inline-flex items-center justify-center h-5 min-w-[1.25rem] px-1 rounded-full bg-palette-ember text-white text-[11px] font-bold"></span>
+                    </button>
+                </div>
+            </nav>
+
+            <main class="flex-grow max-w-5xl mx-auto w-full px-4 py-6">
+
+                <section id="panel-analytics" class="tab-panel"></section>
+
+                <section id="panel-users" class="tab-panel hidden space-y-4">
+                    <input id="userSearch" type="search" placeholder="Tìm theo tên đăng nhập hoặc email..."
+                           class="w-full max-w-sm border border-palette-cream rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-palette-matcha focus:border-palette-matcha">
+                    <div class="bg-white border border-palette-cream rounded-2xl overflow-x-auto">
+                        <table class="w-full text-left text-sm">
+                            <thead class="bg-palette-tofu/60 text-xs uppercase text-palette-matcha/50 border-b border-palette-cream">
+                                <tr>
+                                    <th class="px-4 py-3 font-semibold">Tên</th>
+                                    <th class="px-4 py-3 font-semibold">Email</th>
+                                    <th class="px-4 py-3 font-semibold">Quyền</th>
+                                    <th class="px-4 py-3 font-semibold">Ngày tham gia</th>
+                                    <th class="px-4 py-3 font-semibold">Trạng thái</th>
+                                    <th class="px-4 py-3 font-semibold text-right">Hành động</th>
+                                </tr>
+                            </thead>
+                            <tbody id="usersTableBody"></tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <section id="panel-reports" class="tab-panel hidden">
+                    <div id="reportsList" class="space-y-3"></div>
+                </section>
+
+                <section id="panel-stores" class="tab-panel hidden">
+                    <div id="spotsList" class="space-y-3"></div>
+                </section>
+
+            </main>
+        </div>
+        <!-- /adminApp -->
+
+    </div>
+    <!-- /content wrapper -->
+
+    <div id="toast" class="hidden fixed bottom-6 left-1/2 -translate-x-1/2 bg-palette-matcha text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-lg z-[70]"></div>
+
+    <!-- MODULE SCRIPT -->
+    <script type="module">
+        import {
+            getCurrentUser,
+            fetchAdminOverview,
+            fetchAdminAnalytics,
+            fetchUsers,
+            setUserBanned,
+            setUserRole,
+            fetchPendingReports,
+            resolveReport,
+            deleteItem,
+            fetchPendingSpots,
+            approveSpot,
+        } from './js/supabase.js?v=7';
+
+        let currentUser = null;
+        let currentProfile = null;
+        let activeTab = "analytics";
+        let searchDebounce = null;
+
+        // ---- bootstrap -------------------------------------------------------
+
+        async function init() {
+            const gate = document.getElementById("accessGate");
+            const app = document.getElementById("adminApp");
+
+            let user = null, profile = null;
+            try {
+                const result = await getCurrentUser();
+                user = result.user;
+                profile = result.profile;
+            } catch (e) {
+                console.error("Admin auth check error:", e);
+            }
+            currentUser = user;
+            currentProfile = profile;
+
+            if (!user) {
+                gate.innerHTML = accessGateHtml("Bạn cần đăng nhập", "Vui lòng đăng nhập bằng tài khoản quản trị để tiếp tục.", "login.html", "Đăng Nhập");
+                gate.classList.remove("hidden");
+                return;
+            }
+
+            if (!profile || profile.role !== "admin" || profile.is_banned) {
+                gate.innerHTML = accessGateHtml("Không có quyền truy cập", "Tài khoản của bạn không có quyền quản trị viên.", "index.html", "Về Trang Chủ");
+                gate.classList.remove("hidden");
+                return;
+            }
+
+            app.classList.remove("hidden");
+            wireTabs();
+            wireUserSearch();
+            await loadOverview();
+            await loadTab("analytics");
+        }
+
+        function accessGateHtml(title, message, href, label) {
+            return `
+                <div>
+                    <p class="text-lg font-bold mb-2">${escapeHtml(title)}</p>
+                    <p class="text-sm text-palette-matcha/60 mb-4 max-w-xs mx-auto">${escapeHtml(message)}</p>
+                    <a href="${href}" class="inline-block bg-palette-ember text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-md hover:bg-palette-ember/90 transition">${escapeHtml(label)}</a>
+                </div>`;
+        }
+
+        // ---- header stats ------------------------------------------------------
+
+        async function loadOverview() {
+            const { data, error } = await fetchAdminOverview();
+            if (error || !data) {
+                showToast("Không tải được số liệu tổng quan.");
+                return;
+            }
+            document.getElementById("statTotalSpots").textContent = data.totalSpots;
+
+            const pendingDd = document.getElementById("statPendingReports");
+            pendingDd.textContent = data.pendingReports;
+            pendingDd.classList.toggle("text-palette-ember", data.pendingReports > 0);
+
+            updateBadge("reportsBadge", data.pendingReports);
+            updateBadge("storesBadge", data.pendingSpots);
+        }
+
+        function updateBadge(id, count) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            if (count > 0) {
+                el.textContent = count;
+                el.classList.remove("hidden");
+            } else {
+                el.classList.add("hidden");
+            }
+        }
+
+        // ---- tabs ------------------------------------------------------------
+
+        function wireTabs() {
+            document.querySelectorAll(".tab-btn").forEach((btn) => {
+                btn.addEventListener("click", () => {
+                    const tab = btn.dataset.tab;
+                    if (tab === activeTab) return;
+                    activeTab = tab;
+                    document.querySelectorAll(".tab-btn").forEach((b) => {
+                        const active = b.dataset.tab === tab;
+                        b.classList.toggle("border-palette-matcha", active);
+                        b.classList.toggle("text-palette-matcha", active);
+                        b.classList.toggle("border-transparent", !active);
+                        b.classList.toggle("text-palette-matcha/50", !active);
+                    });
+                    document.querySelectorAll(".tab-panel").forEach((p) => {
+                        p.classList.toggle("hidden", p.id !== `panel-${tab}`);
+                    });
+                    loadTab(tab);
+                });
+            });
+        }
+
+        function loadTab(tab) {
+            if (tab === "analytics") return loadAnalytics();
+            if (tab === "users") return loadUsers();
+            if (tab === "reports") return loadReports();
+            if (tab === "stores") return loadSpots();
+        }
+
+        // ---- Analytics tab -----------------------------------------------------
+
+        async function loadAnalytics() {
+            const panel = document.getElementById("panel-analytics");
+            panel.innerHTML = spinnerHtml();
+
+            const [{ data, error }, { data: overview, error: overviewErr }] = await Promise.all([
+                fetchAdminAnalytics(),
+                fetchAdminOverview(),
+            ]);
+            if (error || overviewErr || !data || !overview) {
+                panel.innerHTML = emptyStateHtml("Không tải được dữ liệu phân tích.");
+                return;
+            }
+
+            const tiles = [
+                { label: "Quán đã duyệt", value: overview.totalSpots - overview.pendingSpots },
+                { label: "Quán chờ duyệt", value: overview.pendingSpots },
+                { label: "Tổng lượt đánh giá", value: data.totalReviews },
+                { label: "Báo cáo đã xử lý", value: data.resolvedReports },
+            ];
+
+            panel.innerHTML = `
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+                    ${tiles.map((t) => `
+                        <div class="bg-white border border-palette-cream rounded-2xl p-4">
+                            <p class="text-2xl font-bold">${t.value}</p>
+                            <p class="text-xs text-palette-matcha/50 mt-1">${escapeHtml(t.label)}</p>
+                        </div>`).join("")}
+                </div>
+                <div class="grid sm:grid-cols-2 gap-6">
+                    <div class="bg-white border border-palette-cream rounded-2xl p-5">
+                        <h3 class="text-sm font-bold mb-3">Quán theo danh mục</h3>
+                        ${breakdownListHtml(data.categoryBreakdown)}
+                    </div>
+                    <div class="bg-white border border-palette-cream rounded-2xl p-5">
+                        <h3 class="text-sm font-bold mb-3">Báo cáo theo lý do</h3>
+                        ${breakdownListHtml(data.reasonBreakdown)}
+                    </div>
+                </div>`;
+        }
+
+        function breakdownListHtml(rows) {
+            if (!rows || rows.length === 0) {
+                return `<p class="text-sm text-palette-matcha/40 py-6 text-center">Chưa có dữ liệu.</p>`;
+            }
+            return `<ul class="space-y-2">${rows.map((r) => `
+                <li class="flex items-center justify-between text-sm">
+                    <span class="text-palette-matcha/70">${escapeHtml(r.label)}</span>
+                    <span class="font-semibold">${r.count}</span>
+                </li>`).join("")}</ul>`;
+        }
+
+        // ---- Users tab ---------------------------------------------------------
+
+        function wireUserSearch() {
+            document.getElementById("userSearch")?.addEventListener("input", () => {
+                clearTimeout(searchDebounce);
+                searchDebounce = setTimeout(loadUsers, 300);
+            });
+        }
+
+        async function loadUsers() {
+            const tbody = document.getElementById("usersTableBody");
+            tbody.innerHTML = `<tr><td colspan="6">${spinnerHtml()}</td></tr>`;
+
+            const query = document.getElementById("userSearch")?.value || "";
+            const { data, error } = await fetchUsers(query);
+
+            if (error) {
+                tbody.innerHTML = `<tr><td colspan="6">${emptyStateHtml("Không tải được danh sách người dùng.")}</td></tr>`;
+                return;
+            }
+            if (data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6">${emptyStateHtml("Không tìm thấy người dùng.")}</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = data.map(userRowHtml).join("");
+            tbody.querySelectorAll("[data-role-id]").forEach((btn) => {
+                btn.addEventListener("click", () => handleToggleRole(btn.dataset.roleId, btn.dataset.role));
+            });
+            tbody.querySelectorAll("[data-ban-id]").forEach((btn) => {
+                btn.addEventListener("click", () => handleToggleBan(btn.dataset.banId, btn.dataset.banned === "true"));
+            });
+        }
+
+        function userRowHtml(u) {
+            const isSelf = currentUser && u.id === currentUser.id;
+            return `
+                <tr class="hover:bg-palette-tofu/40 border-b border-palette-cream last:border-0">
+                    <td class="px-4 py-3 font-semibold">${escapeHtml(u.username)}${isSelf ? ' <span class="text-xs text-palette-matcha/40">(bạn)</span>' : ""}</td>
+                    <td class="px-4 py-3 text-palette-matcha/60">${escapeHtml(u.email || "—")}</td>
+                    <td class="px-4 py-3">${pillHtml(u.role === "admin" ? "warn" : "ok", u.role)}</td>
+                    <td class="px-4 py-3 text-palette-matcha/60">${formatDate(u.created_at)}</td>
+                    <td class="px-4 py-3">${pillHtml(u.is_banned ? "danger" : "ok", u.is_banned ? "Đã khóa" : "Hoạt động")}</td>
+                    <td class="px-4 py-3">
+                        <div class="flex justify-end gap-2">
+                            <button type="button" data-role-id="${u.id}" data-role="${u.role}" ${isSelf ? "disabled" : ""}
+                                class="text-xs font-semibold border border-palette-matcha/20 rounded-lg px-2.5 py-1 hover:bg-palette-tofu disabled:opacity-30 disabled:cursor-not-allowed">
+                                ${u.role === "admin" ? "Gỡ admin" : "Cấp admin"}
+                            </button>
+                            <button type="button" data-ban-id="${u.id}" data-banned="${u.is_banned}" ${isSelf ? "disabled" : ""}
+                                class="text-xs font-semibold rounded-lg px-2.5 py-1 disabled:opacity-30 disabled:cursor-not-allowed ${u.is_banned ? "border border-emerald-300 text-emerald-700 hover:bg-emerald-50" : "border border-palette-ember/30 text-palette-ember hover:bg-palette-ember/5"}">
+                                ${u.is_banned ? "Mở khóa" : "Khóa"}
+                            </button>
+                        </div>
+                    </td>
+                </tr>`;
+        }
+
+        function pillHtml(tone, label) {
+            const cls = tone === "ok" ? "bg-emerald-50 text-emerald-700"
+                : tone === "warn" ? "bg-palette-yolk/15 text-palette-yolk"
+                : "bg-palette-ember/10 text-palette-ember";
+            return `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${cls}">${escapeHtml(label)}</span>`;
+        }
+
+        async function handleToggleBan(userId, currentlyBanned) {
+            if (currentUser && userId === currentUser.id) return;
+            const next = !currentlyBanned;
+            const { success, error } = await setUserBanned(userId, next);
+            if (!success) {
+                showToast("Cập nhật trạng thái thất bại: " + (error?.message || ""));
+                return;
+            }
+            showToast(next ? "Đã khóa tài khoản." : "Đã mở khóa tài khoản.");
+            loadUsers();
+        }
+
+        async function handleToggleRole(userId, currentRole) {
+            if (currentUser && userId === currentUser.id) return;
+            const next = currentRole === "admin" ? "user" : "admin";
+            const confirmed = confirm(next === "admin" ? "Cấp quyền admin cho người dùng này?" : "Gỡ quyền admin của người dùng này?");
+            if (!confirmed) return;
+            const { success, error } = await setUserRole(userId, next);
+            if (!success) {
+                showToast("Cập nhật quyền thất bại: " + (error?.message || ""));
+                return;
+            }
+            showToast(`Đã đổi quyền thành ${next}.`);
+            loadUsers();
+        }
+
+        // ---- Reports tab ---------------------------------------------------------
+
+        async function loadReports() {
+            const list = document.getElementById("reportsList");
+            list.innerHTML = spinnerHtml();
+
+            const { data, error } = await fetchPendingReports();
+            if (error) {
+                list.innerHTML = emptyStateHtml("Không tải được danh sách báo cáo.");
+                return;
+            }
+            if (data.length === 0) {
+                list.innerHTML = emptyStateHtml("Không có báo cáo nào đang chờ xử lý. 🎉");
+                return;
+            }
+
+            list.innerHTML = data.map(reportCardHtml).join("");
+            list.querySelectorAll("[data-dismiss-id]").forEach((btn) => {
+                btn.addEventListener("click", () => handleDismissReport(btn.dataset.dismissId));
+            });
+            list.querySelectorAll("[data-resolve-spot], [data-resolve-review]").forEach((btn) => {
+                btn.addEventListener("click", () => {
+                    const spotId = btn.dataset.resolveSpot || null;
+                    const reviewId = btn.dataset.resolveReview || null;
+                    handleResolveReport(spotId, reviewId);
+                });
+            });
+        }
+
+        function reportCardHtml(r) {
+            const itemType = r.spot_id ? "Quán ăn" : "Đánh giá";
+            const targetLabel = r.spot_id ? (r.spots?.name || `Quán #${r.spot_id}`) : (r.reviews?.comment || `Đánh giá #${r.review_id}`);
+            const targetSub = r.spot_id ? r.spots?.address : "";
+            const resolveAttr = r.spot_id ? `data-resolve-spot="${r.spot_id}"` : `data-resolve-review="${r.review_id}"`;
+
+            return `
+                <div class="bg-white border border-palette-cream rounded-2xl p-4">
+                    <div class="flex flex-wrap items-start justify-between gap-3">
+                        <div class="min-w-0">
+                            <div class="flex items-center gap-2 mb-2">
+                                ${pillHtml("warn", itemType)}
+                                <span class="text-xs text-palette-matcha/40">${timeAgo(r.created_at)}</span>
+                            </div>
+                            <p class="text-sm font-semibold">Lý do: ${escapeHtml(r.reason)}</p>
+                            <p class="text-sm text-palette-matcha/60 mt-1 truncate">Nội dung: ${escapeHtml(targetLabel)}</p>
+                            ${targetSub ? `<p class="text-xs text-palette-matcha/40">${escapeHtml(targetSub)}</p>` : ""}
+                        </div>
+                        <div class="flex gap-2 shrink-0">
+                            <button type="button" data-dismiss-id="${r.id}" class="text-xs font-semibold border border-palette-matcha/20 rounded-lg px-3 py-1.5 hover:bg-palette-tofu">Bỏ qua</button>
+                            <button type="button" ${resolveAttr} class="text-xs font-semibold bg-palette-ember text-white rounded-lg px-3 py-1.5 hover:bg-palette-ember/90">Xóa nội dung &amp; giải quyết</button>
+                        </div>
+                    </div>
+                </div>`;
+        }
+
+        async function handleDismissReport(reportId) {
+            const { success, error } = await resolveReport(reportId);
+            if (!success) {
+                showToast("Không thể bỏ qua báo cáo: " + (error?.message || ""));
+                return;
+            }
+            showToast("Đã bỏ qua báo cáo.");
+            loadReports();
+            loadOverview();
+        }
+
+        // Deleting the reported spot/review cascades in the DB and removes this
+        // report row automatically — no separate "mark resolved" call needed.
+        async function handleResolveReport(spotId, reviewId) {
+            const targetLabel = spotId ? "quán ăn" : "đánh giá";
+            const confirmed = confirm(`Xóa ${targetLabel} này và giải quyết báo cáo? Hành động không thể hoàn tác.`);
+            if (!confirmed) return;
+
+            const type = spotId ? "spot" : "review";
+            const targetId = spotId || reviewId;
+            const { success, error } = await deleteItem(type, targetId);
+            if (!success) {
+                showToast("Không thể xóa nội dung: " + (error?.message || ""));
+                return;
+            }
+            showToast("Đã xóa nội dung và giải quyết báo cáo.");
+            loadReports();
+            loadOverview();
+        }
+
+        // ---- Stores tab ---------------------------------------------------------
+
+        async function loadSpots() {
+            const list = document.getElementById("spotsList");
+            list.innerHTML = spinnerHtml();
+
+            const { data, error } = await fetchPendingSpots();
+            if (error) {
+                list.innerHTML = emptyStateHtml("Không tải được danh sách quán chờ duyệt.");
+                return;
+            }
+            if (data.length === 0) {
+                list.innerHTML = emptyStateHtml("Không có quán nào đang chờ duyệt.");
+                return;
+            }
+
+            list.innerHTML = data.map(spotCardHtml).join("");
+            list.querySelectorAll("[data-approve-id]").forEach((btn) => {
+                btn.addEventListener("click", () => handleApproveSpot(btn.dataset.approveId, btn.dataset.name));
+            });
+            list.querySelectorAll("[data-delete-id]").forEach((btn) => {
+                btn.addEventListener("click", () => handleDeleteSpotAdmin(btn.dataset.deleteId, btn.dataset.name));
+            });
+        }
+
+        function spotCardHtml(s) {
+            return `
+                <div class="bg-white border border-palette-cream rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3">
+                    <div class="min-w-0">
+                        <p class="text-sm font-semibold">${escapeHtml(s.name)}</p>
+                        <p class="text-sm text-palette-matcha/60">${escapeHtml(s.address)}</p>
+                        <p class="text-xs text-palette-matcha/40 mt-1">${escapeHtml(s.category || "")} · Gửi lúc ${timeAgo(s.created_at)}</p>
+                    </div>
+                    <div class="flex gap-2 shrink-0">
+                        <button type="button" data-delete-id="${s.id}" data-name="${escapeHtml(s.name)}" class="text-xs font-semibold border border-palette-ember/30 text-palette-ember rounded-lg px-3 py-1.5 hover:bg-palette-ember/5">Xóa</button>
+                        <button type="button" data-approve-id="${s.id}" data-name="${escapeHtml(s.name)}" class="text-xs font-semibold bg-palette-matcha text-white rounded-lg px-3 py-1.5 hover:bg-palette-matcha/90">Duyệt quán</button>
+                    </div>
+                </div>`;
+        }
+
+        async function handleApproveSpot(spotId, name) {
+            const { success, error } = await approveSpot(spotId);
+            if (!success) {
+                showToast("Không thể duyệt quán: " + (error?.message || ""));
+                return;
+            }
+            showToast(`Đã duyệt "${name}".`);
+            loadSpots();
+            loadOverview();
+        }
+
+        async function handleDeleteSpotAdmin(spotId, name) {
+            const confirmed = confirm(`Xóa quán "${name}"? Hành động không thể hoàn tác.`);
+            if (!confirmed) return;
+            const { success, error } = await deleteItem("spot", spotId);
+            if (!success) {
+                showToast("Không thể xóa quán: " + (error?.message || ""));
+                return;
+            }
+            showToast(`Đã xóa "${name}".`);
+            loadSpots();
+            loadOverview();
+        }
+
+        // ---- shared helpers (same conventions as the rest of the site) ---------
+
+        function spinnerHtml() {
+            return `<div class="flex items-center justify-center gap-2 py-10 text-sm text-palette-matcha/50">
+                <span class="w-4 h-4 rounded-full border-2 border-palette-cream border-t-palette-matcha animate-spin"></span> Đang tải...
+            </div>`;
+        }
+
+        function emptyStateHtml(message) {
+            return `<p class="text-center text-sm text-palette-matcha/40 py-10">${escapeHtml(message)}</p>`;
+        }
+
+        function formatDate(iso) {
+            try {
+                return new Date(iso).toLocaleDateString("vi-VN", { year: "numeric", month: "2-digit", day: "2-digit" });
+            } catch {
+                return iso || "—";
+            }
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById("toast");
+            if (!toast) return;
+            toast.textContent = message;
+            toast.classList.remove("hidden");
+            setTimeout(() => toast.classList.add("hidden"), 2500);
+        }
+
+        function escapeHtml(str) {
+            const div = document.createElement("div");
+            div.textContent = str ?? "";
+            return div.innerHTML;
+        }
+
+        function timeAgo(dateStr) {
+            if (!dateStr) return "";
+            const diffMs = Date.now() - new Date(dateStr).getTime();
+            const minutes = Math.floor(diffMs / 60000);
+            if (minutes < 1) return "Vừa xong";
+            if (minutes < 60) return `${minutes} phút trước`;
+            const hours = Math.floor(minutes / 60);
+            if (hours < 24) return `${hours} giờ trước`;
+            const days = Math.floor(hours / 24);
+            if (days < 7) return `${days} ngày trước`;
+            return new Date(dateStr).toLocaleDateString("vi-VN", { year: "numeric", month: "long", day: "numeric" });
+        }
+
+        if (document.readyState === "loading") {
+            document.addEventListener("DOMContentLoaded", init);
+        } else {
+            init();
+        }
+    </script>
+</body>
+</html>
