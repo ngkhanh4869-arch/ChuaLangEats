@@ -116,7 +116,7 @@ function sidebarHtml(active) {
                 </button>
             </div>
 
-            <nav class="flex-grow overflow-y-auto py-4 px-3 space-y-1">
+            <nav id="navLinksList" class="flex-grow overflow-y-auto py-4 px-3 space-y-1">
                 ${navLinksHtml(active)}
             </nav>
 
@@ -212,6 +212,18 @@ async function init() {
     try {
         const { user, profile } = await getCurrentUser();
         renderAuth(user, profile);
+        if (profile?.role === 'admin' && !profile?.is_banned) {
+            const active = currentPage();
+            const isActive = active === 'admin.html';
+            const cls = isActive
+                ? 'bg-palette-ember/10 text-palette-ember'
+                : 'text-palette-matcha/70 hover:bg-palette-tofu hover:text-palette-matcha';
+            document.getElementById('navLinksList')?.insertAdjacentHTML('beforeend', `
+                <a href="admin.html" title="Quản Trị" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition ${cls}">
+                    <i class="fa-solid fa-shield-halved w-4 text-center shrink-0 ${isActive ? 'text-palette-ember' : 'text-palette-matcha/40'}"></i>
+                    <span class="nav-label">Quản Trị</span>
+                </a>`);
+        }
     } catch (err) {
         console.error('Nav auth check error:', err);
         renderAuth(null, null);
