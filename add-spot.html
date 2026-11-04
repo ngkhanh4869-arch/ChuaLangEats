@@ -315,44 +315,83 @@
         initLocationPicker();
 
         // ---------------------------------------------------------------
-        // Auto-locate from the typed address (geocoding via OpenStreetMap
-        // Nominatim, no API key needed). Runs after the user stops typing
-        // and again on blur, so the pin updates without extra clicks.
-        // If nothing is found, we ask for a more detailed address instead
-        // of failing silently.
+        // Auto-locate from the typed address. Runs after the user stops
+        // typing and again on blur, so the pin updates without extra clicks.
+        //
+        // Primary: Goong (https://goong.io), a Vietnam-specific geocoder
+        // built on local street/address data — far better match rate for
+        // Vietnamese alley/ngõ addresses than global geocoders. Needs a
+        // free API key from https://account.goong.io (1,000 requests/day
+        // free, no card required) pasted into GOONG_API_KEY below.
+        //
+        // Fallback: OpenStreetMap Nominatim, free and keyless but weak on
+        // Vietnamese addresses (a published study found it matches only
+        // ~16% of real Vietnamese addresses) — used only if Goong has no
+        // key configured yet, finds nothing, or errors out.
+        //
+        // If neither finds anything, we ask for a more detailed address
+        // instead of failing silently.
         // ---------------------------------------------------------------
+        const GOONG_API_KEY = "YOUR_GOONG_API_KEY"; // <- paste your free key from account.goong.io here
+
         let geocodeDebounce = null;
         const addressInput = document.getElementById("address");
+
+        function buildGeocodeQuery(address) {
+            return `${address}, Chùa Láng, Đống Đa, Hà Nội, Việt Nam`;
+        }
+
+        async function geocodeWithGoong(fullQuery) {
+            if (!GOONG_API_KEY || GOONG_API_KEY === "YOUR_GOONG_API_KEY") return null; // not configured yet
+            try {
+                const res = await fetch(
+                    `https://rsapi.goong.io/Geocode?address=${encodeURIComponent(fullQuery)}&api_key=${GOONG_API_KEY}`
+                );
+                if (!res.ok) return null; // bad/expired key, rate-limited, etc. — fall back quietly
+                const data = await res.json();
+                const loc = data?.results?.[0]?.geometry?.location;
+                if (loc?.lat == null || loc?.lng == null) return null;
+                return { lat: loc.lat, lng: loc.lng };
+            } catch (err) {
+                console.warn("Goong không khả dụng, thử Nominatim:", err);
+                return null;
+            }
+        }
+
+        async function geocodeWithNominatim(fullQuery) {
+            try {
+                const res = await fetch(
+                    `https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=vn&q=${encodeURIComponent(fullQuery)}`,
+                    { headers: { "Accept-Language": "vi" } }
+                );
+                const results = await res.json();
+                const first = results?.[0];
+                if (!first) return null;
+                return { lat: parseFloat(first.lat), lng: parseFloat(first.lon) };
+            } catch (err) {
+                console.warn("Không thể tự định vị địa chỉ:", err);
+                return null;
+            }
+        }
 
         async function geocodeAddress(rawAddress) {
             const address = rawAddress.trim();
             const locationError = document.getElementById("locationError");
             if (address.length < 8) return; // too short to be worth a lookup
 
-            try {
-                const query = encodeURIComponent(`${address}, Chùa Láng, Đống Đa, Hà Nội, Việt Nam`);
-                const res = await fetch(
-                    `https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=vn&q=${query}`,
-                    { headers: { "Accept-Language": "vi" } }
-                );
-                const results = await res.json();
+            const fullQuery = buildGeocodeQuery(address);
+            const found = (await geocodeWithGoong(fullQuery)) || (await geocodeWithNominatim(fullQuery));
 
-                if (!results || results.length === 0) {
-                    if (locationError) {
-                        locationError.textContent = "Không tự định vị được từ địa chỉ này. Vui lòng điền thêm chi tiết (số nhà, ngõ/ngách) hoặc chọn thủ công trên bản đồ.";
-                        locationError.classList.remove("hidden");
-                    }
-                    return;
+            if (!found) {
+                if (locationError) {
+                    locationError.textContent = "Không tự định vị được từ địa chỉ này. Vui lòng điền thêm chi tiết (số nhà, ngõ/ngách) hoặc chọn thủ công trên bản đồ.";
+                    locationError.classList.remove("hidden");
                 }
-
-                const { lat, lon } = results[0];
-                locationMap.setView([parseFloat(lat), parseFloat(lon)], 17);
-                setPickedLocation(parseFloat(lat), parseFloat(lon));
-            } catch (err) {
-                // Network hiccup or Nominatim unavailable — fail quietly,
-                // the user can still pin the spot manually.
-                console.warn("Không thể tự định vị địa chỉ:", err);
+                return;
             }
+
+            locationMap.setView([found.lat, found.lng], 17);
+            setPickedLocation(found.lat, found.lng);
         }
 
         addressInput?.addEventListener("blur", () => geocodeAddress(addressInput.value));
