@@ -278,3 +278,162 @@ export async function deleteItem(type, itemId) {
     return { success: false, error: err };
   }
 }
+
+// =============================================================================
+// ADMIN HELPERS
+// =============================================================================
+// Every call below is still gated server-side by the admin RLS policies
+// (see the SQL migration) — a non-admin account gets a Postgres permission
+// error back, regardless of whether admin.html is reachable.
+
+export async function fetchAdminOverview() {
+  try {
+    const count = async (table, status) => {
+      let q = supabaseClient.from(table).select('*', { count: 'exact', head: true });
+      if (status) q = q.eq('status', status);
+      const { count, error } = await q;
+      if (error) throw error;
+      return count ?? 0;
+    };
+
+    const [totalSpots, pendingSpots, pendingReports, totalUsers] = await Promise.all([
+      count('spots'),
+      count('spots', 'pending'),
+      count('reports', 'pending'),
+      count('profiles'),
+    ]);
+
+    return { data: { totalSpots, pendingSpots, pendingReports, totalUsers }, error: null };
+  } catch (err) {
+    return { data: null, error: err };
+  }
+}
+
+export async function fetchAdminAnalytics() {
+  try {
+    const [reviewsRes, resolvedRes, categoryRes, reasonRes] = await Promise.all([
+      supabaseClient.from('reviews').select('*', { count: 'exact', head: true }),
+      supabaseClient.from('reports').select('*', { count: 'exact', head: true }).eq('status', 'resolved'),
+      supabaseClient.from('spots').select('category').limit(500),
+      supabaseClient.from('reports').select('reason').limit(500),
+    ]);
+    if (reviewsRes.error) throw reviewsRes.error;
+    if (resolvedRes.error) throw resolvedRes.error;
+    if (categoryRes.error) throw categoryRes.error;
+    if (reasonRes.error) throw reasonRes.error;
+
+    const tally = (rows, key) => {
+      const counts = new Map();
+      (rows || []).forEach((row) => counts.set(row[key], (counts.get(row[key]) || 0) + 1));
+      return Array.from(counts, ([label, count]) => ({ label, count })).sort((a, b) => b.count - a.count);
+    };
+
+    return {
+      data: {
+        totalReviews: reviewsRes.count ?? 0,
+        resolvedReports: resolvedRes.count ?? 0,
+        categoryBreakdown: tally(categoryRes.data, 'category'),
+        reasonBreakdown: tally(reasonRes.data, 'reason'),
+      },
+      error: null,
+    };
+  } catch (err) {
+    return { data: null, error: err };
+  }
+}
+
+export async function fetchUsers(query = '') {
+  try {
+    let q = supabaseClient
+      .from('profiles')
+      .select('id, username, email, role, is_banned, created_at')
+      .order('created_at', { ascending: false })
+      .limit(100);
+
+    const trimmed = String(query || '').trim();
+    if (trimmed) {
+      q = q.or(`username.ilike.%${trimmed}%,email.ilike.%${trimmed}%`);
+    }
+
+    const { data, error } = await q;
+    if (error) return { data: [], error };
+    return { data: data || [], error: null };
+  } catch (err) {
+    return { data: [], error: err };
+  }
+}
+
+export async function setUserBanned(userId, banned) {
+  try {
+    const { error } = await supabaseClient.from('profiles').update({ is_banned: banned }).eq('id', userId);
+    if (error) return { success: false, error };
+    return { success: true, error: null };
+  } catch (err) {
+    return { success: false, error: err };
+  }
+}
+
+export async function setUserRole(userId, role) {
+  if (role !== 'admin' && role !== 'user') {
+    return { success: false, error: new Error(`Quyền không hợp lệ: "${role}".`) };
+  }
+  try {
+    const { error } = await supabaseClient.from('profiles').update({ role }).eq('id', userId);
+    if (error) return { success: false, error };
+    return { success: true, error: null };
+  } catch (err) {
+    return { success: false, error: err };
+  }
+}
+
+export async function fetchPendingReports() {
+  try {
+    const { data, error } = await supabaseClient
+      .from('reports')
+      .select(
+        'id, reason, status, created_at, spot_id, review_id, spots:spot_id(id, name, address), reviews:review_id(id, comment, spot_id)'
+      )
+      .eq('status', 'pending')
+      .order('created_at', { ascending: false })
+      .limit(100);
+    if (error) return { data: [], error };
+    return { data: data || [], error: null };
+  } catch (err) {
+    return { data: [], error: err };
+  }
+}
+
+export async function resolveReport(reportId) {
+  try {
+    const { error } = await supabaseClient.from('reports').update({ status: 'resolved' }).eq('id', reportId);
+    if (error) return { success: false, error };
+    return { success: true, error: null };
+  } catch (err) {
+    return { success: false, error: err };
+  }
+}
+
+export async function fetchPendingSpots() {
+  try {
+    const { data, error } = await supabaseClient
+      .from('spots')
+      .select('id, name, address, category, status, created_at, created_by')
+      .eq('status', 'pending')
+      .order('created_at', { ascending: true })
+      .limit(100);
+    if (error) return { data: [], error };
+    return { data: data || [], error: null };
+  } catch (err) {
+    return { data: [], error: err };
+  }
+}
+
+export async function approveSpot(spotId) {
+  try {
+    const { error } = await supabaseClient.from('spots').update({ status: 'approved' }).eq('id', spotId);
+    if (error) return { success: false, error };
+    return { success: true, error: null };
+  } catch (err) {
+    return { success: false, error: err };
+  }
+}
