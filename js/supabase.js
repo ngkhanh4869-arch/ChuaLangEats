@@ -149,7 +149,12 @@ export async function createSpot(spotData, foodFiles = [], menuFile = null) {
       tags: Array.isArray(spotData.tags) ? spotData.tags : [],
       food_images: foodUrls,
       menu_image: menuUrl,
-      created_by: user.id
+      created_by: user.id,
+      // Always submit new spots as pending review — never let the client
+      // (or a stale DB default) publish a spot straight to the public feed.
+      // fetchSpots() only shows status = 'approved', so this is what makes
+      // every new spot wait for an admin to approve it in admin.html.
+      status: 'pending'
     };
 
     const { data, error } = await supabaseClient
