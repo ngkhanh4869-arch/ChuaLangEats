@@ -60,7 +60,6 @@
 
         <!-- Empty state -->
         <div id="feedEmpty" class="hidden text-center py-16">
-            <div class="text-4xl mb-3">🍜</div>
             <p class="font-bold text-sm mb-2">Chưa có bài đăng nào</p>
             <p class="text-xs text-palette-matcha/60 mb-4">Hãy là người đầu tiên thêm quán!</p>
             <a href="add-spot.html" class="inline-block bg-palette-ember text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-md hover:bg-palette-ember/90 transition">+ Thêm Quán Ngay</a>
@@ -212,7 +211,7 @@
                         ${images.map((img) => `
                         <div class="snap-center shrink-0 w-full relative">
                             <img src="${img.url}" class="w-full h-60 object-cover" loading="lazy" alt="${escapeHtml(spot.name)}">
-                            ${img.isMenu ? `<span class="absolute bottom-3 right-3 bg-palette-matcha text-white text-[10px] font-bold px-2 py-1 rounded-full">📋 Ảnh Menu / Bảng Giá</span>` : ""}
+                            ${img.isMenu ? `<span class="absolute bottom-3 right-3 bg-palette-matcha text-white text-[10px] font-bold px-2 py-1 rounded-full">Ảnh Menu / Bảng Giá</span>` : ""}
                         </div>`).join("")}
                     </div>
 
@@ -265,9 +264,9 @@
                 </div>
 
                 <div class="flex items-center gap-2 px-4 pb-4 pt-1 border-t border-palette-cream">
-                    <a href="index.html?spotId=${spot.id}" class="flex-1 text-center text-xs font-bold text-palette-matcha border border-palette-cream rounded-lg py-2 hover:bg-palette-tofu transition">📍 Xem trên Bản Đồ</a>
-                    <button type="button" class="report-btn flex-1 text-xs font-bold text-palette-yolk border border-palette-yolk/30 rounded-lg py-2 hover:bg-palette-yolk/10 transition" data-spot-id="${spot.id}">🚩 Báo Cáo</button>
-                    ${canDelete ? `<button type="button" class="delete-btn text-xs font-bold text-palette-ember border border-palette-ember/30 rounded-lg py-2 px-3 hover:bg-palette-ember/10 transition" data-spot-id="${spot.id}">🗑️ Xóa Bài</button>` : ""}
+                    <a href="index.html?spotId=${spot.id}" class="flex-1 text-center text-xs font-bold text-palette-matcha border border-palette-cream rounded-lg py-2 hover:bg-palette-tofu transition">Xem trên Bản Đồ</a>
+                    <button type="button" class="report-btn flex-1 text-xs font-bold text-palette-yolk border border-palette-yolk/30 rounded-lg py-2 hover:bg-palette-yolk/10 transition" data-spot-id="${spot.id}">Báo Cáo</button>
+                    ${canDelete ? `<button type="button" class="delete-btn text-xs font-bold text-palette-ember border border-palette-ember/30 rounded-lg py-2 px-3 hover:bg-palette-ember/10 transition" data-spot-id="${spot.id}">Xóa Bài</button>` : ""}
                 </div>
             </article>`;
         }
