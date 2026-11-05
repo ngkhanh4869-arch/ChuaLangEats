@@ -321,6 +321,35 @@
         </div>
     </div>
 
+    <!-- REPORT COMMENT MODAL -->
+    <div id="reviewReportModal" class="hidden fixed inset-0 bg-black/40 z-[60] flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-lg max-w-sm w-full p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="font-bold text-sm">Báo Cáo Bình Luận</h3>
+                <button type="button" onclick="closeReviewReportModal()" class="text-palette-matcha/50 hover:text-palette-matcha text-lg leading-none">✕</button>
+            </div>
+            <form id="reviewReportForm" class="space-y-3 text-xs">
+                <label class="flex items-center gap-2 border border-palette-cream rounded-xl p-3 cursor-pointer hover:bg-palette-tofu transition">
+                    <input type="radio" name="reviewReportReason" value="Nội dung vi phạm / Xúc phạm" class="accent-palette-ember">
+                    <span>Nội dung vi phạm / Xúc phạm</span>
+                </label>
+                <label class="flex items-center gap-2 border border-palette-cream rounded-xl p-3 cursor-pointer hover:bg-palette-tofu transition">
+                    <input type="radio" name="reviewReportReason" value="Spam / Quảng cáo" class="accent-palette-ember">
+                    <span>Spam / Quảng cáo</span>
+                </label>
+                <label class="flex items-center gap-2 border border-palette-cream rounded-xl p-3 cursor-pointer hover:bg-palette-tofu transition">
+                    <input type="radio" name="reviewReportReason" value="Thông tin sai sự thật" class="accent-palette-ember">
+                    <span>Thông tin sai sự thật</span>
+                </label>
+                <p id="reviewReportError" class="hidden text-palette-ember font-semibold"></p>
+                <button type="submit" id="reviewReportSubmitBtn" class="w-full bg-palette-ember hover:bg-palette-ember/90 text-white font-bold py-2.5 rounded-xl shadow-md transition disabled:opacity-70">Gửi Báo Cáo</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- TOAST -->
+    <div id="toast" class="hidden fixed bottom-6 left-1/2 -translate-x-1/2 bg-palette-matcha text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-lg z-[70]"></div>
+
     <!-- FOOTER -->
     <footer class="bg-palette-matcha text-palette-matcha/40 text-xs py-8 border-t border-palette-cream/10 mt-12">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4">
@@ -355,7 +384,7 @@
 
     <!-- MAIN JAVASCRIPT APP LOGIC CONNECTED TO SUPABASE -->
     <script type="module">
-        import { getCurrentUser, fetchSpots, fetchReviews, createReview } from './js/supabase.js';
+        import { getCurrentUser, fetchSpots, fetchReviews, createReview, reportItem } from './js/supabase.js';
 
         // STATE VARIABLES
         let vendors = [];
@@ -366,6 +395,7 @@
         let markers = [];
         let isMapViewOpen = false;
         let currentRatings = { quality: 5, hygiene: 5 };
+        let currentReportReviewId = null;
 
         // INITIALIZATION
         window.addEventListener('DOMContentLoaded', async () => {
@@ -911,6 +941,7 @@
             // Fetch live detailed reviews for this spot from Supabase
             const { data: reviewsData, error } = await fetchReviews(vendorId);
             const liveReviews = (reviewsData || []).map(r => ({
+                id: r.id,
                 user: r.profiles?.username || "Sinh viên ẩn danh",
                 badge: r.profiles?.badge || "Sinh Viên Verified",
                 rating: r.quality_rating || 5,
@@ -989,10 +1020,13 @@
                                         <span class="text-palette-yolk-500 font-bold">${r.rating} ★</span>
                                     </div>
                                     <p class="text-palette-matcha/70">${escapeHtml(r.comment)}</p>
-                                    <div class="text-[10px] text-palette-matcha/40 flex items-center gap-2 pt-1">
-                                        <span>Giá thực tế: <strong class="text-palette-matcha/70">${escapeHtml(r.pricePaid)}</strong></span>
-                                        <span>•</span>
-                                        <span>Sạch sẽ: <strong class="text-emerald-600">${r.hygiene}/5 ★</strong></span>
+                                    <div class="text-[10px] text-palette-matcha/40 flex items-center justify-between gap-2 pt-1">
+                                        <div class="flex items-center gap-2">
+                                            <span>Giá thực tế: <strong class="text-palette-matcha/70">${escapeHtml(r.pricePaid)}</strong></span>
+                                            <span>•</span>
+                                            <span>Sạch sẽ: <strong class="text-emerald-600">${r.hygiene}/5 ★</strong></span>
+                                        </div>
+                                        <button type="button" class="review-report-btn shrink-0 font-semibold text-palette-yolk hover:underline" data-review-id="${r.id}">🚩 Báo cáo</button>
                                     </div>
                                 </div>
                             `).join('')}
@@ -1007,10 +1041,85 @@
                     </button>
                 </div>
             `;
+
+            modalContent.querySelectorAll(".review-report-btn").forEach((btn) => {
+                btn.addEventListener("click", () => openReviewReportModal(btn.dataset.reviewId));
+            });
         }
 
         function closeDetailModal() {
             document.getElementById("detailModal")?.classList.add("hidden");
+        }
+
+        // 8. Report-a-comment modal
+        function openReviewReportModal(reviewId) {
+            if (!currentUser) {
+                window.location.href = "login.html";
+                return;
+            }
+            currentReportReviewId = reviewId;
+            document.querySelectorAll('input[name="reviewReportReason"]').forEach((r) => (r.checked = false));
+            document.getElementById("reviewReportError")?.classList.add("hidden");
+            document.getElementById("reviewReportModal")?.classList.remove("hidden");
+        }
+
+        function closeReviewReportModal() {
+            document.getElementById("reviewReportModal")?.classList.add("hidden");
+            currentReportReviewId = null;
+        }
+
+        document.getElementById("reviewReportForm")?.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const selected = document.querySelector('input[name="reviewReportReason"]:checked');
+            const reportError = document.getElementById("reviewReportError");
+
+            if (!selected) {
+                if (reportError) {
+                    reportError.textContent = "Vui lòng chọn một lý do.";
+                    reportError.classList.remove("hidden");
+                }
+                return;
+            }
+
+            const submitBtn = document.getElementById("reviewReportSubmitBtn");
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.textContent = "Đang gửi...";
+            }
+
+            try {
+                const { error } = await reportItem("review", currentReportReviewId, selected.value);
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = "Gửi Báo Cáo";
+                }
+                if (error) {
+                    if (reportError) {
+                        reportError.textContent = "Không thể gửi báo cáo: " + error.message;
+                        reportError.classList.remove("hidden");
+                    }
+                    return;
+                }
+                closeReviewReportModal();
+                showToast("Đã gửi báo cáo bình luận. Cảm ơn bạn!");
+            } catch (err) {
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = "Gửi Báo Cáo";
+                }
+                if (reportError) {
+                    reportError.textContent = "Không thể gửi báo cáo: " + err.message;
+                    reportError.classList.remove("hidden");
+                }
+            }
+        });
+
+        function showToast(message) {
+            const toast = document.getElementById("toast");
+            if (!toast) return;
+            toast.textContent = message;
+            toast.classList.remove("hidden");
+            setTimeout(() => toast.classList.add("hidden"), 2500);
         }
 
         function escapeHtml(str) {
@@ -1034,6 +1143,7 @@
         window.handleReviewSubmit = handleReviewSubmit;
         window.openDetailModal = openDetailModal;
         window.closeDetailModal = closeDetailModal;
+        window.closeReviewReportModal = closeReviewReportModal;
     </script>
 </body>
 </html>
