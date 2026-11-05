@@ -82,34 +82,55 @@
 
     <div id="appContent" class="lg:pl-64 min-h-screen flex flex-col">
 
-    <!-- HERO BANNER / SPECIAL DEALS CAROUSEL -->
+    <!-- "HÔM NAY ĂN GÌ?" — VIETNAMESE MEAL RANDOMIZER -->
     <section class="bg-gradient-to-r from-palette-ember-600 via-palette-ember-500 to-palette-yolk-500 text-white py-6 shadow-inner">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex flex-col md:flex-row items-center justify-between gap-4">
-                <div class="space-y-1 text-center md:text-left">
-                    <div class="inline-flex items-center gap-1.5 bg-white/20 backdrop-blur-md px-2.5 py-0.5 rounded-full text-xs font-medium text-white mb-1">
-                        <i class="fa-solid fa-fire text-palette-yolk-300"></i>
-                        <span>Combo Sinh Viên Tiết Kiệm</span>
+            <div class="flex flex-col lg:flex-row items-stretch gap-5">
+
+                <!-- Intro + controls -->
+                <div class="flex-1 space-y-3 text-center lg:text-left">
+                    <div class="inline-flex items-center gap-1.5 bg-white/20 backdrop-blur-md px-2.5 py-0.5 rounded-full text-xs font-medium text-white">
+                        <i class="fa-solid fa-dice text-palette-yolk-200"></i>
+                        <span>Món Ngẫu Nhiên Mỗi Ngày</span>
                     </div>
-                    <h2 class="text-xl sm:text-2xl font-extrabold tracking-tight">Xua tan nỗi lo bị dẹp xe đẩy cổng trường FTU & DAV!</h2>
-                    <p class="text-palette-ember-100 text-xs sm:text-sm max-w-xl">Khám phá các quán ăn ngon trong ngõ hẻm Chùa Láng — Đã được xác thực giá &lt; 30k & chuẩn vệ sinh bởi FTUers.</p>
+                    <h2 class="text-xl sm:text-2xl font-extrabold tracking-tight">Hôm nay ăn gì?</h2>
+                    <p class="text-palette-ember-100 text-xs sm:text-sm max-w-md mx-auto lg:mx-0">Bí ý tưởng bữa ăn? Quay một vòng để nhận gợi ý món Việt ngẫu nhiên — kể cả những món chưa có quán nào trên hệ thống!</p>
+
+                    <!-- Meal-time chips -->
+                    <div class="flex flex-wrap justify-center lg:justify-start gap-1.5 pt-1" id="randomizerMealChips">
+                        <button type="button" data-meal="all" onclick="setRandomizerMeal('all')" class="randomizer-chip bg-white text-palette-ember-600 text-[11px] font-bold px-3 py-1.5 rounded-full transition">Bất kỳ</button>
+                        <button type="button" data-meal="breakfast" onclick="setRandomizerMeal('breakfast')" class="randomizer-chip bg-white/15 hover:bg-white/25 text-white text-[11px] font-bold px-3 py-1.5 rounded-full transition">Sáng</button>
+                        <button type="button" data-meal="lunch" onclick="setRandomizerMeal('lunch')" class="randomizer-chip bg-white/15 hover:bg-white/25 text-white text-[11px] font-bold px-3 py-1.5 rounded-full transition">Trưa</button>
+                        <button type="button" data-meal="dinner" onclick="setRandomizerMeal('dinner')" class="randomizer-chip bg-white/15 hover:bg-white/25 text-white text-[11px] font-bold px-3 py-1.5 rounded-full transition">Tối</button>
+                        <button type="button" data-meal="snack" onclick="setRandomizerMeal('snack')" class="randomizer-chip bg-white/15 hover:bg-white/25 text-white text-[11px] font-bold px-3 py-1.5 rounded-full transition">Ăn vặt</button>
+                    </div>
+
+                    <button onclick="spinRandomizer()" id="spinBtn" class="inline-flex items-center gap-2 bg-white text-palette-ember-600 hover:bg-palette-cream font-bold text-sm px-5 py-2.5 rounded-xl shadow-sm transition">
+                        <i class="fa-solid fa-shuffle"></i> Quay ngay!
+                    </button>
                 </div>
-                
-                <!-- Quick Hot Deals Widget -->
-                <div class="w-full md:w-auto flex items-center gap-2 overflow-x-auto pb-1 md:pb-0 custom-scrollbar">
-                    <div class="bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 p-3 rounded-xl min-w-[200px] text-xs transition cursor-pointer" onclick="filterByPreset('under20k')">
-                        <div class="font-bold text-palette-yolk-300 flex items-center gap-1">
-                            <i class="fa-solid fa-bolt"></i> Siêu Rẻ &lt; 20K
+
+                <!-- Result card -->
+                <div class="w-full lg:w-80 shrink-0">
+                    <div class="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-3 h-full flex flex-col">
+                        <div id="randomizerPlaceholder" class="flex-1 flex flex-col items-center justify-center text-center text-white/80 text-xs py-8 gap-2">
+                            <i class="fa-solid fa-bowl-rice text-3xl text-white/50"></i>
+                            <p>Nhấn "Quay ngay!" để nhận gợi ý món ăn</p>
                         </div>
-                        <div class="text-white/90 font-medium text-[11px] mt-0.5">Bánh mì, Cơm nắm, Xôi ngõ 185</div>
-                    </div>
-                    <div class="bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 p-3 rounded-xl min-w-[200px] text-xs transition cursor-pointer" onclick="filterByPreset('cleanFirst')">
-                        <div class="font-bold text-emerald-300 flex items-center gap-1">
-                            <i class="fa-solid fa-shield-halved"></i> Chuẩn Vệ Sinh
+                        <div id="randomizerCard" class="hidden">
+                            <div class="relative h-32 w-full rounded-xl overflow-hidden bg-palette-tofu">
+                                <img id="randomizerImg" src="" alt="" class="w-full h-full object-cover" onerror="this.src='https://placehold.co/600x400/fff1f2/be123c?text=Mon+An+Viet'">
+                                <div id="randomizerMealBadge" class="absolute top-2 left-2 bg-palette-matcha/80 text-white text-[10px] font-bold px-2 py-0.5 rounded-md"></div>
+                            </div>
+                            <h3 id="randomizerName" class="font-extrabold text-white text-base mt-2 leading-snug"></h3>
+                            <p id="randomizerDesc" class="text-white/85 text-[11px] mt-1 leading-relaxed"></p>
+                            <p id="randomizerPrice" class="text-palette-yolk-200 text-[11px] font-bold mt-1.5 flex items-center gap-1"></p>
+                            <div id="randomizerCta" class="mt-2"></div>
+                            <button onclick="spinRandomizer()" class="mt-2 w-full text-center text-[11px] font-bold text-white/80 hover:text-white underline underline-offset-2">Quay lại</button>
                         </div>
-                        <div class="text-white/90 font-medium text-[11px] mt-0.5">Rating Sạch Sẽ &gt;= 4.5 Stars</div>
                     </div>
                 </div>
+
             </div>
         </div>
     </section>
@@ -385,9 +406,12 @@
     <!-- MAIN JAVASCRIPT APP LOGIC CONNECTED TO SUPABASE -->
     <script type="module">
         import { getCurrentUser, fetchSpots, fetchReviews, createReview, reportItem } from './js/supabase.js';
+        import { DISHES } from './js/dishes.js';
 
         // STATE VARIABLES
         let vendors = [];
+        let randomizerMeal = 'all';
+        let randomizerSpinTimer = null;
         let rawSpotsData = [];
         let currentUser = null;
         let currentProfile = null;
@@ -638,18 +662,113 @@
             }
         }
 
-        function filterByPreset(type) {
-            if (document.getElementById("priceFilter")) document.getElementById("priceFilter").value = "all";
-            if (document.getElementById("distanceFilter")) document.getElementById("distanceFilter").value = "all";
-            if (document.getElementById("hygieneFilter")) document.getElementById("hygieneFilter").value = "all";
-            if (document.getElementById("mealFilter")) document.getElementById("mealFilter").value = "all";
+        // "HÔM NAY ĂN GÌ?" RANDOMIZER
+        //
+        // Picks a random dish from js/dishes.js (optionally narrowed to a
+        // meal time), runs a quick shuffle animation, then shows the result
+        // together with a live check of whether any vendor already on the
+        // site serves something like it.
 
-            if (type === 'under20k' && document.getElementById("priceFilter")) {
-                document.getElementById("priceFilter").value = "20";
-            } else if (type === 'cleanFirst' && document.getElementById("hygieneFilter")) {
-                document.getElementById("hygieneFilter").value = "4.5";
+        function setRandomizerMeal(meal) {
+            randomizerMeal = meal;
+            document.querySelectorAll('#randomizerMealChips .randomizer-chip').forEach(btn => {
+                const active = btn.dataset.meal === meal;
+                btn.className = 'randomizer-chip text-[11px] font-bold px-3 py-1.5 rounded-full transition ' +
+                    (active ? 'bg-white text-palette-ember-600' : 'bg-white/15 hover:bg-white/25 text-white');
+            });
+        }
+
+        function dishPool() {
+            const pool = randomizerMeal === 'all'
+                ? DISHES
+                : DISHES.filter(d => d.mealTypes.includes(randomizerMeal));
+            // Fall back to the full list rather than coming up empty if a
+            // meal-time filter somehow matches nothing.
+            return pool.length > 0 ? pool : DISHES;
+        }
+
+        function spinRandomizer() {
+            if (randomizerSpinTimer) clearInterval(randomizerSpinTimer);
+
+            const placeholder = document.getElementById("randomizerPlaceholder");
+            const card = document.getElementById("randomizerCard");
+            const img = document.getElementById("randomizerImg");
+            const nameEl = document.getElementById("randomizerName");
+            if (placeholder) placeholder.classList.add("hidden");
+            if (card) card.classList.remove("hidden");
+
+            const pool = dishPool();
+            let ticks = 0;
+            const maxTicks = 10;
+
+            randomizerSpinTimer = setInterval(() => {
+                const preview = pool[Math.floor(Math.random() * pool.length)];
+                if (img) img.src = preview.image;
+                if (img) img.alt = preview.name;
+                if (nameEl) nameEl.textContent = preview.name;
+                ticks++;
+                if (ticks >= maxTicks) {
+                    clearInterval(randomizerSpinTimer);
+                    const finalDish = pool[Math.floor(Math.random() * pool.length)];
+                    renderDishResult(finalDish);
+                }
+            }, 90);
+        }
+
+        const MEAL_LABELS = { breakfast: "Ăn sáng", lunch: "Ăn trưa", dinner: "Ăn tối", snack: "Ăn vặt" };
+
+        function matchingVendorsFor(dish) {
+            if (!Array.isArray(vendors) || vendors.length === 0) return [];
+            const kws = dish.keywords.map(k => k.toLowerCase());
+            return vendors.filter(v => kws.some(k =>
+                v.name.toLowerCase().includes(k) ||
+                v.description.toLowerCase().includes(k) ||
+                v.tags.some(t => t.toLowerCase().includes(k))
+            ));
+        }
+
+        function renderDishResult(dish) {
+            const img = document.getElementById("randomizerImg");
+            const mealBadge = document.getElementById("randomizerMealBadge");
+            const nameEl = document.getElementById("randomizerName");
+            const descEl = document.getElementById("randomizerDesc");
+            const priceEl = document.getElementById("randomizerPrice");
+            const ctaEl = document.getElementById("randomizerCta");
+
+            if (img) { img.src = dish.image; img.alt = dish.name; }
+            if (mealBadge) mealBadge.textContent = dish.mealTypes.map(m => MEAL_LABELS[m] || m).join(" · ");
+            if (nameEl) nameEl.textContent = dish.name;
+            if (descEl) descEl.textContent = dish.description;
+            if (priceEl) priceEl.innerHTML = `<i class="fa-solid fa-tag"></i> ${escapeHtml(dish.priceText)}`;
+
+            const matches = matchingVendorsFor(dish);
+            if (ctaEl) {
+                if (matches.length > 0) {
+                    ctaEl.innerHTML = `
+                        <button onclick="jumpToVendorsFor('${dish.id}')" class="w-full text-center bg-white text-palette-ember-600 hover:bg-palette-cream font-bold text-[11px] px-3 py-2 rounded-lg transition">
+                            <i class="fa-solid fa-location-dot mr-1"></i>${matches.length} quán gần đây đang phục vụ món này
+                        </button>`;
+                } else {
+                    ctaEl.innerHTML = `
+                        <a href="add-spot.html" class="block w-full text-center bg-white/15 hover:bg-white/25 text-white font-bold text-[11px] px-3 py-2 rounded-lg transition">
+                            <i class="fa-solid fa-plus mr-1"></i>Chưa có quán nào — thêm quán đầu tiên!
+                        </a>`;
+                }
             }
+        }
+
+        function jumpToVendorsFor(dishId) {
+            const dish = DISHES.find(d => d.id === dishId);
+            if (!dish) return;
+
+            const searchInput = document.getElementById("searchInput");
+            if (searchInput) searchInput.value = dish.keywords[0];
+            ["priceFilter", "distanceFilter", "hygieneFilter", "mealFilter"].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.value = "all";
+            });
             applyFilters();
+            document.getElementById("vendorGrid")?.scrollIntoView({ behavior: "smooth", block: "start" });
         }
 
         function resetFilters() {
@@ -1134,7 +1253,9 @@
 
         // Attach functions to window for inline HTML handlers
         window.applyFilters = applyFilters;
-        window.filterByPreset = filterByPreset;
+        window.setRandomizerMeal = setRandomizerMeal;
+        window.spinRandomizer = spinRandomizer;
+        window.jumpToVendorsFor = jumpToVendorsFor;
         window.resetFilters = resetFilters;
         window.toggleMapView = toggleMapView;
         window.openReviewModal = openReviewModal;
