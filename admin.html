@@ -72,14 +72,14 @@
 
             <nav class="bg-white border-b border-palette-cream">
                 <div class="max-w-5xl mx-auto px-4 flex gap-5 overflow-x-auto">
-                    <button type="button" data-tab="analytics" class="tab-btn flex items-center gap-1.5 py-3 text-sm font-semibold border-b-2 border-palette-matcha text-palette-matcha whitespace-nowrap">📊 Phân Tích</button>
-                    <button type="button" data-tab="users" class="tab-btn flex items-center gap-1.5 py-3 text-sm font-semibold border-b-2 border-transparent text-palette-matcha/50 hover:text-palette-matcha whitespace-nowrap">👥 Người Dùng</button>
+                    <button type="button" data-tab="analytics" class="tab-btn flex items-center gap-1.5 py-3 text-sm font-semibold border-b-2 border-palette-matcha text-palette-matcha whitespace-nowrap">Phân Tích</button>
+                    <button type="button" data-tab="users" class="tab-btn flex items-center gap-1.5 py-3 text-sm font-semibold border-b-2 border-transparent text-palette-matcha/50 hover:text-palette-matcha whitespace-nowrap">Người Dùng</button>
                     <button type="button" data-tab="reports" class="tab-btn flex items-center gap-1.5 py-3 text-sm font-semibold border-b-2 border-transparent text-palette-matcha/50 hover:text-palette-matcha whitespace-nowrap">
-                        🚩 Báo Cáo
+                        Báo Cáo
                         <span id="reportsBadge" class="hidden ml-0.5 inline-flex items-center justify-center h-5 min-w-[1.25rem] px-1 rounded-full bg-palette-ember text-white text-[11px] font-bold"></span>
                     </button>
                     <button type="button" data-tab="stores" class="tab-btn flex items-center gap-1.5 py-3 text-sm font-semibold border-b-2 border-transparent text-palette-matcha/50 hover:text-palette-matcha whitespace-nowrap">
-                        🍜 Quán Ăn
+                        Quán Ăn
                         <span id="storesBadge" class="hidden ml-0.5 inline-flex items-center justify-center h-5 min-w-[1.25rem] px-1 rounded-full bg-palette-ember text-white text-[11px] font-bold"></span>
                     </button>
                 </div>
@@ -407,7 +407,7 @@
                 return;
             }
             if (data.length === 0) {
-                list.innerHTML = emptyStateHtml("Không có báo cáo nào đang chờ xử lý. 🎉");
+                list.innerHTML = emptyStateHtml("Không có báo cáo nào đang chờ xử lý.");
                 return;
             }
 
