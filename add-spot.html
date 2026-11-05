@@ -341,13 +341,49 @@
             return `${address}, Chùa Láng, Đống Đa, Hà Nội, Việt Nam`;
         }
 
+        // ---------------------------------------------------------------
+        // Goong's free REST key allows 1,000 requests/day. Once that's
+        // used up, Goong answers every request with HTTP 429 until the
+        // quota resets ~24h later. Without this, the form would keep
+        // spending a failed request on Goong for every keystroke all day.
+        // Instead: the first 429 starts a 24h cooldown (saved in
+        // localStorage so it survives a page reload); while it's active we
+        // skip straight to the Nominatim fallback, and once 24h have
+        // passed we automatically try the Goong key again.
+        // ---------------------------------------------------------------
+        const GOONG_COOLDOWN_KEY = "clge_goong_cooldown_until";
+        const GOONG_COOLDOWN_MS = 24 * 60 * 60 * 1000; // 24h
+
+        function isGoongCoolingDown() {
+            try {
+                const until = Number(localStorage.getItem(GOONG_COOLDOWN_KEY) || 0);
+                return Date.now() < until;
+            } catch (err) {
+                return false; // storage unavailable (e.g. private mode) — just try the key
+            }
+        }
+
+        function startGoongCooldown() {
+            try {
+                localStorage.setItem(GOONG_COOLDOWN_KEY, String(Date.now() + GOONG_COOLDOWN_MS));
+            } catch (err) {
+                // storage unavailable — we'll just keep hitting Goong until it works again
+            }
+            console.warn("Goong đã hết quota 1.000 request/ngày. Tạm dùng Nominatim, sẽ tự thử lại key sau 24 giờ.");
+        }
+
         async function geocodeWithGoong(fullQuery) {
             if (!GOONG_API_KEY || GOONG_API_KEY === "YOUR_GOONG_API_KEY") return null; // not configured yet
+            if (isGoongCoolingDown()) return null; // quota very likely still exhausted — don't waste the call
             try {
                 const res = await fetch(
                     `https://rsapi.goong.io/Geocode?address=${encodeURIComponent(fullQuery)}&api_key=${GOONG_API_KEY}`
                 );
-                if (!res.ok) return null; // bad/expired key, rate-limited, etc. — fall back quietly
+                if (res.status === 429) {
+                    startGoongCooldown();
+                    return null;
+                }
+                if (!res.ok) return null; // bad/expired key, etc. — fall back quietly
                 const data = await res.json();
                 const loc = data?.results?.[0]?.geometry?.location;
                 if (loc?.lat == null || loc?.lng == null) return null;
@@ -486,7 +522,7 @@
                     submitBtnText.textContent = "Đăng Quán Ăn";
                     return;
                 }
-                showAlert("Tạo quán thành công! Đang chuyển hướng...", "success");
+                showAlert("Đã gửi quán thành công! Quán sẽ hiển thị công khai sau khi quản trị viên duyệt. Đang chuyển hướng...", "success");
                 setTimeout(() => (window.location.href = "profile.html"), 1500);
             } catch (err) {
                 showAlert("Không thể tạo quán: " + err.message, "error");
