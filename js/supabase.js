@@ -217,13 +217,33 @@ export async function createReview(reviewData) {
   };
 
   try {
+    // One review per user per spot is enforced in Postgres by a
+    // UNIQUE(spot_id, user_id) constraint. Upserting on that same pair means
+    // a second submission updates the user's existing review in place
+    // instead of erroring against the constraint or creating a duplicate.
     const { data, error } = await supabaseClient
       .from('reviews')
-      .insert([payload])
+      .upsert([payload], { onConflict: 'spot_id,user_id' })
       .select();
 
     if (error) return { data: null, error };
     return { data: data ? data[0] : null, error: null };
+  } catch (err) {
+    return { data: null, error: err };
+  }
+}
+
+export async function fetchMyReview(spotId, userId) {
+  try {
+    const { data, error } = await supabaseClient
+      .from('reviews')
+      .select('*')
+      .eq('spot_id', spotId)
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (error) return { data: null, error };
+    return { data: data || null, error: null };
   } catch (err) {
     return { data: null, error: err };
   }
