@@ -72,6 +72,17 @@
         .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(2, 56, 32, 0.25); border-radius: 8px; }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(2, 56, 32, 0.45); }
         .vendor-card:hover { transform: translateY(-3px); }
+
+        /* Case-opening reel ("Hôm nay ăn gì?") */
+        .case-card-img { transition: transform .2s ease, box-shadow .2s ease; }
+        .case-card-win .case-card-img {
+            animation: caseWinPulse 0.9s ease-in-out 2;
+            box-shadow: 0 0 0 2px #FFF4E6, 0 0 18px 4px rgba(249, 161, 27, 0.85);
+        }
+        @keyframes caseWinPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
     </style>
 </head>
 <body class="bg-palette-tofu text-palette-matcha font-sans antialiased min-h-screen">
@@ -82,55 +93,67 @@
 
     <div id="appContent" class="lg:pl-64 min-h-screen flex flex-col">
 
-    <!-- "HÔM NAY ĂN GÌ?" — VIETNAMESE MEAL RANDOMIZER -->
+    <!-- "HÔM NAY ĂN GÌ?" — VIETNAMESE MEAL RANDOMIZER (CS:GO-style case-opening reel) -->
     <section class="bg-gradient-to-r from-palette-ember-600 via-palette-ember-500 to-palette-yolk-500 text-white py-6 shadow-inner">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex flex-col lg:flex-row items-stretch gap-5">
 
-                <!-- Intro + controls -->
-                <div class="flex-1 space-y-3 text-center lg:text-left">
-                    <div class="inline-flex items-center gap-1.5 bg-white/20 backdrop-blur-md px-2.5 py-0.5 rounded-full text-xs font-medium text-white">
-                        <i class="fa-solid fa-dice text-palette-yolk-200"></i>
-                        <span>Món Ngẫu Nhiên Mỗi Ngày</span>
-                    </div>
-                    <h2 class="text-xl sm:text-2xl font-extrabold tracking-tight">Hôm nay ăn gì?</h2>
-                    <p class="text-palette-ember-100 text-xs sm:text-sm max-w-md mx-auto lg:mx-0">Bí ý tưởng bữa ăn? Quay một vòng để nhận gợi ý món Việt ngẫu nhiên — kể cả những món chưa có quán nào trên hệ thống!</p>
-
-                    <!-- Meal-time chips -->
-                    <div class="flex flex-wrap justify-center lg:justify-start gap-1.5 pt-1" id="randomizerMealChips">
-                        <button type="button" data-meal="all" onclick="setRandomizerMeal('all')" class="randomizer-chip bg-white text-palette-ember-600 text-[11px] font-bold px-3 py-1.5 rounded-full transition">Bất kỳ</button>
-                        <button type="button" data-meal="breakfast" onclick="setRandomizerMeal('breakfast')" class="randomizer-chip bg-white/15 hover:bg-white/25 text-white text-[11px] font-bold px-3 py-1.5 rounded-full transition">Sáng</button>
-                        <button type="button" data-meal="lunch" onclick="setRandomizerMeal('lunch')" class="randomizer-chip bg-white/15 hover:bg-white/25 text-white text-[11px] font-bold px-3 py-1.5 rounded-full transition">Trưa</button>
-                        <button type="button" data-meal="dinner" onclick="setRandomizerMeal('dinner')" class="randomizer-chip bg-white/15 hover:bg-white/25 text-white text-[11px] font-bold px-3 py-1.5 rounded-full transition">Tối</button>
-                        <button type="button" data-meal="snack" onclick="setRandomizerMeal('snack')" class="randomizer-chip bg-white/15 hover:bg-white/25 text-white text-[11px] font-bold px-3 py-1.5 rounded-full transition">Ăn vặt</button>
-                    </div>
-
-                    <button onclick="spinRandomizer()" id="spinBtn" class="inline-flex items-center gap-2 bg-white text-palette-ember-600 hover:bg-palette-cream font-bold text-sm px-5 py-2.5 rounded-xl shadow-sm transition">
-                        <i class="fa-solid fa-shuffle"></i> Quay ngay!
-                    </button>
+            <div class="text-center lg:text-left space-y-1.5 mb-3">
+                <div class="inline-flex items-center gap-1.5 bg-white/20 backdrop-blur-md px-2.5 py-0.5 rounded-full text-xs font-medium text-white">
+                    <i class="fa-solid fa-dice text-palette-yolk-200"></i>
+                    <span>Món Ngẫu Nhiên Mỗi Ngày</span>
                 </div>
+                <h2 class="text-xl sm:text-2xl font-extrabold tracking-tight">Hôm nay ăn gì?</h2>
+                <p class="text-palette-ember-100 text-xs sm:text-sm max-w-lg mx-auto lg:mx-0">Mở hộp để nhận gợi ý món Việt ngẫu nhiên — kể cả những món chưa có quán nào trên hệ thống!</p>
+            </div>
 
-                <!-- Result card -->
-                <div class="w-full lg:w-80 shrink-0">
-                    <div class="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-3 h-full flex flex-col">
-                        <div id="randomizerPlaceholder" class="flex-1 flex flex-col items-center justify-center text-center text-white/80 text-xs py-8 gap-2">
-                            <i class="fa-solid fa-bowl-rice text-3xl text-white/50"></i>
-                            <p>Nhấn "Quay ngay!" để nhận gợi ý món ăn</p>
+            <!-- Meal-time chips -->
+            <div class="flex flex-wrap justify-center lg:justify-start gap-1.5 mb-3" id="randomizerMealChips">
+                <button type="button" data-meal="all" onclick="setRandomizerMeal('all')" class="randomizer-chip bg-white text-palette-ember-600 text-[11px] font-bold px-3 py-1.5 rounded-full transition">Bất kỳ</button>
+                <button type="button" data-meal="breakfast" onclick="setRandomizerMeal('breakfast')" class="randomizer-chip bg-white/15 hover:bg-white/25 text-white text-[11px] font-bold px-3 py-1.5 rounded-full transition">Sáng</button>
+                <button type="button" data-meal="lunch" onclick="setRandomizerMeal('lunch')" class="randomizer-chip bg-white/15 hover:bg-white/25 text-white text-[11px] font-bold px-3 py-1.5 rounded-full transition">Trưa</button>
+                <button type="button" data-meal="dinner" onclick="setRandomizerMeal('dinner')" class="randomizer-chip bg-white/15 hover:bg-white/25 text-white text-[11px] font-bold px-3 py-1.5 rounded-full transition">Tối</button>
+                <button type="button" data-meal="snack" onclick="setRandomizerMeal('snack')" class="randomizer-chip bg-white/15 hover:bg-white/25 text-white text-[11px] font-bold px-3 py-1.5 rounded-full transition">Ăn vặt</button>
+            </div>
+
+            <!-- Case-opening reel: a long horizontal strip of dish cards races past a
+                 fixed center pointer and settles on the chosen dish, like a CS:GO case
+                 opening / slot machine. Cards are injected by spinRandomizer() in the
+                 script below, not written here. -->
+            <div class="relative mb-3">
+                <div class="pointer-events-none absolute left-1/2 top-0 bottom-0 w-[3px] -translate-x-1/2 bg-white z-20 shadow-[0_0_8px_rgba(255,255,255,0.8)]"></div>
+                <div class="pointer-events-none absolute left-1/2 -top-1.5 -translate-x-1/2 z-20 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[7px] border-t-white"></div>
+                <div class="pointer-events-none absolute left-1/2 -bottom-1.5 -translate-x-1/2 z-20 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-b-[7px] border-b-white"></div>
+
+                <div id="caseViewport" class="relative overflow-hidden rounded-xl bg-black/25 border border-white/20 h-28 sm:h-32">
+                    <div id="caseTrack" class="flex items-center h-full gap-2 absolute left-0 top-0 px-2"></div>
+                    <div class="pointer-events-none absolute inset-y-0 left-0 w-10 sm:w-16 bg-gradient-to-r from-palette-ember-600 to-transparent z-10"></div>
+                    <div class="pointer-events-none absolute inset-y-0 right-0 w-10 sm:w-16 bg-gradient-to-l from-palette-ember-600 to-transparent z-10"></div>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-center lg:justify-start gap-3 flex-wrap">
+                <button onclick="spinRandomizer()" id="spinBtn" class="inline-flex items-center gap-2 bg-white text-palette-ember-600 hover:bg-palette-cream font-bold text-sm px-5 py-2.5 rounded-xl shadow-sm transition disabled:opacity-60 disabled:cursor-not-allowed">
+                    <i class="fa-solid fa-box-open"></i> Mở hộp!
+                </button>
+                <p id="randomizerIdleHint" class="text-white/75 text-xs">Nhấn để mở hộp và nhận gợi ý món ăn hôm nay</p>
+            </div>
+
+            <!-- Result panel, revealed once the reel settles -->
+            <div id="randomizerResultPanel" class="hidden mt-3 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-3 flex flex-col sm:flex-row sm:items-center gap-3">
+                <div class="flex items-start gap-3 flex-1 min-w-0">
+                    <div class="h-16 w-16 sm:h-20 sm:w-20 rounded-xl overflow-hidden bg-palette-tofu shrink-0">
+                        <img id="randomizerImg" src="" alt="" class="w-full h-full object-cover" onerror="this.src='https://placehold.co/200x200/fff1f2/be123c?text=Mon+An+Viet'">
+                    </div>
+                    <div class="min-w-0">
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <h3 id="randomizerName" class="font-extrabold text-white text-base leading-snug"></h3>
+                            <span id="randomizerMealBadge" class="bg-palette-matcha/80 text-white text-[10px] font-bold px-2 py-0.5 rounded-md"></span>
                         </div>
-                        <div id="randomizerCard" class="hidden">
-                            <div class="relative h-32 w-full rounded-xl overflow-hidden bg-palette-tofu">
-                                <img id="randomizerImg" src="" alt="" class="w-full h-full object-cover" onerror="this.src='https://placehold.co/600x400/fff1f2/be123c?text=Mon+An+Viet'">
-                                <div id="randomizerMealBadge" class="absolute top-2 left-2 bg-palette-matcha/80 text-white text-[10px] font-bold px-2 py-0.5 rounded-md"></div>
-                            </div>
-                            <h3 id="randomizerName" class="font-extrabold text-white text-base mt-2 leading-snug"></h3>
-                            <p id="randomizerDesc" class="text-white/85 text-[11px] mt-1 leading-relaxed"></p>
-                            <p id="randomizerPrice" class="text-palette-yolk-200 text-[11px] font-bold mt-1.5 flex items-center gap-1"></p>
-                            <div id="randomizerCta" class="mt-2"></div>
-                            <button onclick="spinRandomizer()" class="mt-2 w-full text-center text-[11px] font-bold text-white/80 hover:text-white underline underline-offset-2">Quay lại</button>
-                        </div>
+                        <p id="randomizerDesc" class="text-white/85 text-[11px] mt-0.5 leading-relaxed"></p>
+                        <p id="randomizerPrice" class="text-palette-yolk-200 text-[11px] font-bold mt-1 flex items-center gap-1"></p>
                     </div>
                 </div>
-
+                <div class="shrink-0 w-full sm:w-44" id="randomizerCta"></div>
             </div>
         </div>
     </section>
@@ -411,7 +434,7 @@
         // STATE VARIABLES
         let vendors = [];
         let randomizerMeal = 'all';
-        let randomizerSpinTimer = null;
+        let spinning = false;
         let rawSpotsData = [];
         let currentUser = null;
         let currentProfile = null;
@@ -662,12 +685,21 @@
             }
         }
 
-        // "HÔM NAY ĂN GÌ?" RANDOMIZER
+        // "HÔM NAY ĂN GÌ?" RANDOMIZER — CS:GO-style case-opening reel.
         //
-        // Picks a random dish from js/dishes.js (optionally narrowed to a
-        // meal time), runs a quick shuffle animation, then shows the result
-        // together with a live check of whether any vendor already on the
-        // site serves something like it.
+        // spinRandomizer() builds a long strip of dish cards (the real pick
+        // planted at CASE_WIN_INDEX, the rest decoys from the same pool),
+        // animates the strip past a fixed center pointer with a fast-start /
+        // slow-end easing, and reveals the result panel — plus a live check
+        // of whether any vendor already on the site serves it — once the
+        // strip settles.
+
+        const MEAL_LABELS = { breakfast: "Ăn sáng", lunch: "Ăn trưa", dinner: "Ăn tối", snack: "Ăn vặt" };
+        const CASE_CARD_W = 92;    // px — keep in sync with the width set in buildCaseCardHtml()
+        const CASE_CARD_GAP = 8;   // px — keep in sync with #caseTrack's gap-2
+        const CASE_STEP = CASE_CARD_W + CASE_CARD_GAP;
+        const CASE_REEL_LENGTH = 40;
+        const CASE_WIN_INDEX = 33; // land near the end so there's a long run-up
 
         function setRandomizerMeal(meal) {
             randomizerMeal = meal;
@@ -687,35 +719,62 @@
             return pool.length > 0 ? pool : DISHES;
         }
 
-        function spinRandomizer() {
-            if (randomizerSpinTimer) clearInterval(randomizerSpinTimer);
-
-            const placeholder = document.getElementById("randomizerPlaceholder");
-            const card = document.getElementById("randomizerCard");
-            const img = document.getElementById("randomizerImg");
-            const nameEl = document.getElementById("randomizerName");
-            if (placeholder) placeholder.classList.add("hidden");
-            if (card) card.classList.remove("hidden");
-
-            const pool = dishPool();
-            let ticks = 0;
-            const maxTicks = 10;
-
-            randomizerSpinTimer = setInterval(() => {
-                const preview = pool[Math.floor(Math.random() * pool.length)];
-                if (img) img.src = preview.image;
-                if (img) img.alt = preview.name;
-                if (nameEl) nameEl.textContent = preview.name;
-                ticks++;
-                if (ticks >= maxTicks) {
-                    clearInterval(randomizerSpinTimer);
-                    const finalDish = pool[Math.floor(Math.random() * pool.length)];
-                    renderDishResult(finalDish);
-                }
-            }, 90);
+        function buildCaseCardHtml(dish) {
+            return `
+                <div class="case-card shrink-0" style="width:${CASE_CARD_W}px">
+                    <div class="case-card-img h-16 sm:h-20 w-full rounded-lg overflow-hidden bg-palette-tofu border-2 border-white/30">
+                        <img src="${dish.image}" alt="" class="w-full h-full object-cover" onerror="this.src='https://placehold.co/200x200/fff1f2/be123c?text=Mon+An'">
+                    </div>
+                    <div class="text-[9px] sm:text-[10px] text-white font-semibold text-center mt-1 leading-tight truncate px-0.5">${escapeHtml(dish.name)}</div>
+                </div>`;
         }
 
-        const MEAL_LABELS = { breakfast: "Ăn sáng", lunch: "Ăn trưa", dinner: "Ăn tối", snack: "Ăn vặt" };
+        function spinRandomizer() {
+            if (spinning) return;
+            const track = document.getElementById("caseTrack");
+            const viewport = document.getElementById("caseViewport");
+            if (!track || !viewport) return;
+
+            const pool = dishPool();
+            const finalDish = pool[Math.floor(Math.random() * pool.length)];
+
+            spinning = true;
+            const spinBtn = document.getElementById("spinBtn");
+            const hint = document.getElementById("randomizerIdleHint");
+            if (spinBtn) spinBtn.disabled = true;
+            if (hint) hint.textContent = "Đang mở hộp...";
+            document.getElementById("randomizerResultPanel")?.classList.add("hidden");
+
+            // Build the reel: random decoys with the real pick planted at CASE_WIN_INDEX.
+            let html = "";
+            for (let i = 0; i < CASE_REEL_LENGTH; i++) {
+                const d = (i === CASE_WIN_INDEX) ? finalDish : pool[Math.floor(Math.random() * pool.length)];
+                html += buildCaseCardHtml(d);
+            }
+            track.innerHTML = html;
+            track.style.transition = "none";
+            track.style.transform = "translateX(0px)";
+            void track.offsetWidth; // force reflow so the instant reset above lands before animating
+
+            const viewportW = viewport.clientWidth;
+            const jitter = (Math.random() - 0.5) * (CASE_CARD_W * 0.6);
+            const targetX = -(CASE_WIN_INDEX * CASE_STEP + CASE_CARD_W / 2 - viewportW / 2) + jitter;
+
+            requestAnimationFrame(() => {
+                track.style.transition = "transform 4.2s cubic-bezier(0.1, 0.72, 0.1, 1)";
+                track.style.transform = `translateX(${targetX}px)`;
+            });
+
+            track.addEventListener("transitionend", function onEnd() {
+                track.removeEventListener("transitionend", onEnd);
+                spinning = false;
+                if (spinBtn) spinBtn.disabled = false;
+                if (hint) hint.textContent = 'Nhấn "Mở hộp!" để quay lại';
+                const cards = track.querySelectorAll(".case-card");
+                if (cards[CASE_WIN_INDEX]) cards[CASE_WIN_INDEX].classList.add("case-card-win");
+                showResultPanel(finalDish);
+            }, { once: true });
+        }
 
         function matchingVendorsFor(dish) {
             if (!Array.isArray(vendors) || vendors.length === 0) return [];
@@ -727,7 +786,8 @@
             ));
         }
 
-        function renderDishResult(dish) {
+        function showResultPanel(dish) {
+            const panel = document.getElementById("randomizerResultPanel");
             const img = document.getElementById("randomizerImg");
             const mealBadge = document.getElementById("randomizerMealBadge");
             const nameEl = document.getElementById("randomizerName");
@@ -746,15 +806,16 @@
                 if (matches.length > 0) {
                     ctaEl.innerHTML = `
                         <button onclick="jumpToVendorsFor('${dish.id}')" class="w-full text-center bg-white text-palette-ember-600 hover:bg-palette-cream font-bold text-[11px] px-3 py-2 rounded-lg transition">
-                            <i class="fa-solid fa-location-dot mr-1"></i>${matches.length} quán gần đây đang phục vụ món này
+                            <i class="fa-solid fa-location-dot mr-1"></i>${matches.length} quán gần đây
                         </button>`;
                 } else {
                     ctaEl.innerHTML = `
                         <a href="add-spot.html" class="block w-full text-center bg-white/15 hover:bg-white/25 text-white font-bold text-[11px] px-3 py-2 rounded-lg transition">
-                            <i class="fa-solid fa-plus mr-1"></i>Chưa có quán nào — thêm quán đầu tiên!
+                            <i class="fa-solid fa-plus mr-1"></i>Thêm quán đầu tiên!
                         </a>`;
                 }
             }
+            if (panel) panel.classList.remove("hidden");
         }
 
         function jumpToVendorsFor(dishId) {
