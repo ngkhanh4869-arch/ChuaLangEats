@@ -826,13 +826,24 @@
             const dish = DISHES.find(d => d.id === dishId);
             if (!dish) return;
 
+            // Render the exact vendors matchingVendorsFor() already counted for
+            // the CTA button, rather than re-running the free-text search box
+            // with a single fixed keyword (keywords[0]). Those two could
+            // disagree — e.g. a dish matches a vendor only via one of its
+            // *other* keywords ("ốc" inside "Huyền Ốc Hải Phòng"), while
+            // keywords[0] ("ốc luộc") never appears there as an exact phrase,
+            // so the free-text search came up empty even though the button
+            // correctly said "1 quán gần đây".
+            const matches = matchingVendorsFor(dish);
+
             const searchInput = document.getElementById("searchInput");
-            if (searchInput) searchInput.value = dish.keywords[0];
+            if (searchInput) searchInput.value = "";
             ["priceFilter", "distanceFilter", "hygieneFilter", "mealFilter"].forEach(id => {
                 const el = document.getElementById(id);
                 if (el) el.value = "all";
             });
-            applyFilters();
+
+            renderVendorGrid(matches);
             document.getElementById("vendorGrid")?.scrollIntoView({ behavior: "smooth", block: "start" });
         }
 
