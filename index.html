@@ -302,6 +302,9 @@
                     <input type="hidden" id="reviewVendorId" value="">
                     <div id="reviewVendorResults" class="hidden absolute z-20 left-0 right-0 mt-1 bg-white border border-palette-cream rounded-xl shadow-lg max-h-48 overflow-y-auto"></div>
                     <p id="reviewVendorEmpty" class="hidden text-palette-matcha/40 text-[11px] mt-1">Không tìm thấy quán nào khớp.</p>
+                    <p id="reviewExistingNotice" class="hidden text-palette-ember-700 bg-palette-ember-50/60 border border-palette-ember-100 rounded-lg px-2.5 py-1.5 text-[11px] font-medium mt-1.5">
+                        <i class="fa-solid fa-circle-info mr-1"></i>Bạn đã đánh giá quán này — form đã điền sẵn đánh giá cũ, gửi lại để cập nhật.
+                    </p>
                 </div>
 
                 <!-- Rating Scales Grid -->
@@ -428,7 +431,7 @@
 
     <!-- MAIN JAVASCRIPT APP LOGIC CONNECTED TO SUPABASE -->
     <script type="module">
-        import { getCurrentUser, fetchSpots, fetchReviews, createReview, reportItem } from './js/supabase.js';
+        import { getCurrentUser, fetchSpots, fetchReviews, createReview, fetchMyReview, reportItem } from './js/supabase.js';
         import { DISHES } from './js/dishes.js';
 
         // STATE VARIABLES
@@ -442,6 +445,7 @@
         let markers = [];
         let isMapViewOpen = false;
         let currentRatings = { quality: 5, hygiene: 5 };
+        let editingReviewId = null; // non-null while the form holds the current user's existing review for the selected spot
         let currentReportReviewId = null;
 
         // INITIALIZATION
@@ -958,6 +962,41 @@
             if (idInput) idInput.value = vendor.id;
             if (searchInput) searchInput.value = `${vendor.name} (${vendor.priceText})`;
             hideReviewVendorResults();
+            syncExistingReview(vendor.id);
+        }
+
+        // Each user can only hold one review per spot (enforced in Postgres by
+        // a UNIQUE(spot_id, user_id) constraint, and createReview() upserts on
+        // that same pair). This resets the form to blank defaults, then — if
+        // the signed-in user already has a review for the selected vendor —
+        // pre-fills it and switches the form into "update" mode so a second
+        // submission edits that review instead of silently failing against
+        // the constraint.
+        async function syncExistingReview(vendorId) {
+            editingReviewId = null;
+            const notice = document.getElementById("reviewExistingNotice");
+            const submitBtn = document.getElementById("submitReviewBtn");
+            notice?.classList.add("hidden");
+            setRating("quality", 5);
+            setRating("hygiene", 5);
+            const priceEl = document.getElementById("reviewPrice");
+            const commentEl = document.getElementById("reviewComment");
+            if (priceEl) priceEl.value = "";
+            if (commentEl) commentEl.value = "";
+            if (submitBtn) submitBtn.innerText = "Gửi Đánh Giá Ngay";
+
+            if (!vendorId || !currentUser) return;
+
+            const { data: mine } = await fetchMyReview(vendorId, currentUser.id);
+            if (!mine) return;
+
+            editingReviewId = mine.id;
+            setRating("quality", Math.round(Number(mine.quality_rating) || 5));
+            setRating("hygiene", Math.round(Number(mine.hygiene_rating) || 5));
+            if (priceEl) priceEl.value = mine.price_paid ?? "";
+            if (commentEl) commentEl.value = mine.comment || "";
+            if (submitBtn) submitBtn.innerText = "Cập Nhật Đánh Giá";
+            notice?.classList.remove("hidden");
         }
 
         function renderReviewVendorResults(rawQuery) {
@@ -1008,7 +1047,9 @@
 
             if (vendorId) {
                 const vendor = vendors.find(v => v.id === vendorId);
-                if (vendor) selectReviewVendor(vendor);
+                if (vendor) selectReviewVendor(vendor); // selectReviewVendor() calls syncExistingReview() itself
+            } else {
+                syncExistingReview(null); // no vendor chosen yet — just reset the form to blank defaults
             }
 
             const badgeNotice = document.getElementById("badgeNotice");
@@ -1060,6 +1101,9 @@
                 return;
             }
 
+            const wasUpdate = !!editingReviewId;
+            const previousLabel = submitBtn ? submitBtn.innerText : "Gửi Đánh Giá Ngay";
+
             try {
                 if (submitBtn) {
                     submitBtn.disabled = true;
@@ -1079,7 +1123,8 @@
                     return;
                 }
 
-                alert("Cảm ơn bạn! Đánh giá đã được gửi thành công lên hệ thống Supabase.");
+                alert(wasUpdate ? "Đã cập nhật đánh giá của bạn!" : "Cảm ơn bạn! Đánh giá đã được gửi thành công lên hệ thống Supabase.");
+                editingReviewId = null;
                 closeReviewModal();
                 
                 // Clear form inputs
@@ -1096,7 +1141,7 @@
             } finally {
                 if (submitBtn) {
                     submitBtn.disabled = false;
-                    submitBtn.innerText = "Gửi Đánh Giá Ngay";
+                    submitBtn.innerText = previousLabel;
                 }
             }
         }
