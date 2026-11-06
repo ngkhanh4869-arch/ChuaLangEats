@@ -137,5 +137,25 @@ export const DISHES = [
         priceText: "15.000 – 25.000 VNĐ",
         keywords: ["chè thái", "chè"],
         image: "https://photo-baomoi.bmcdn.me/w700_r1/2026_07_21_83_55659398/96d188eac5a12cff75b0.jpg"
+    },
+    {
+        id: "oc-luoc",
+        name: "Ốc Luộc",
+        description: "Ốc tươi luộc sả, chấm nước mắm gừng cay nồng — món ăn chơi buổi tối quen thuộc của giới trẻ Hà Nội.",
+        category: "Ăn Vặt",
+        mealTypes: ["dinner", "snack"],
+        priceText: "30.000 – 60.000 VNĐ",
+        keywords: ["ốc luộc", "ốc"],
+        image: "https://static.vinwonders.com/production/oc-luoc-ha-noi-1.jpg"
+    },
+    {
+        id: "ga-ran",
+        name: "Gà Rán",
+        description: "Gà tẩm bột chiên vàng giòn rụm, thơm lừng — vừa làm món ăn vặt vừa no bụng được bữa chính.",
+        category: "Ăn Vặt",
+        mealTypes: ["lunch", "dinner", "snack"],
+        priceText: "25.000 – 45.000 VNĐ",
+        keywords: ["gà rán"],
+        image: "https://static1.squarespace.com/static/5fee116050339566e9b38f09/5fee11df5abd827cad1a68c9/67c79935e60afb37c9886499/1741360470879/Screenshot+2025-03-04+at+7.25.58+PM.png?format=1500w"
     }
 ];
