@@ -1,464 +1,161 @@
-// Initialize Supabase Client via ESM import
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+// js/dishes.js
+//
+// Dataset for the "Hôm nay ăn gì?" (What to eat today?) randomizer on the
+// homepage. This is intentionally separate from the Supabase `spots` table:
+// it's a curated list of popular Vietnamese dishes so the randomizer stays
+// fun and varied even before the vendor database is big, and can surface
+// dishes nobody has added a quán for yet.
+//
+// To add a dish: copy an entry below and fill in the fields. `category`
+// should match one of the categories used in add-spot.html
+// (Cơm/Bún/Phở, Ăn Vặt, Cà Phê/Trà Sữa, Đồ Uống, Bánh/Tráng Miệng, Khác)
+// so the "quán gần đây" lookup has something sensible to compare against.
+// `mealTypes` is any combination of breakfast/lunch/dinner/snack.
+// `keywords` are lowercase strings (with Vietnamese diacritics) used to spot
+// an existing vendor that already serves this dish — the first keyword is
+// also what gets typed into the search bar when jumping to results.
+// `image` is a photo URL; if it ever breaks, the UI falls back to a plain
+// placeholder automatically, so swapping in your own photo later is safe.
 
-const SUPABASE_URL = 'https://qdyxijdscpkezdtpttlo.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFkeXhpamRzY3BrZXpkdHB0dGxvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI0ODQyNzcsImV4cCI6MjEwODA2MDI3N30.teYtRKzI8WlMc6kxOvKK37BdYguKf578fwh_7nmsVVE';
-
-export const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-// Alias export to maintain backward compatibility with imports expecting 'supabase'
-export const supabase = supabaseClient;
-
-// =============================================================================
-// AUTH HELPERS
-// =============================================================================
-
-export async function getCurrentUser() {
-  try {
-    const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
-    if (authError || !user) return { user: null, profile: null, error: authError || null };
-
-    const { data: profile, error: profileError } = await supabaseClient
-      .from('profiles')
-      .select('*')
-      .eq('id', user.id)
-      .maybeSingle();
-
-    return {
-      user,
-      profile: profile || { username: user.user_metadata?.username, badge: user.user_metadata?.badge },
-      error: profileError || null
-    };
-  } catch (err) {
-    return { user: null, profile: null, error: err };
-  }
-}
-
-export async function signUpUser(username, password, badge) {
-  const cleanUsername = String(username).trim().toLowerCase().replace(/[^a-z0-9._-]/g, '_');
-  const syntheticEmail = `${cleanUsername}@chualangeats.user`;
-
-  const { data, error } = await supabaseClient.auth.signUp({
-    email: syntheticEmail,
-    password: password,
-    options: {
-      data: {
-        username: String(username).trim(),
-        badge: badge || 'Sinh Viên Verified'
-      }
+export const DISHES = [
+    {
+        id: "pho-bo",
+        name: "Phở Bò",
+        description: "Nước dùng xương bò ninh nhiều giờ, thơm mùi quế hồi, ăn cùng bánh phở mềm.",
+        category: "Cơm/Bún/Phở",
+        mealTypes: ["breakfast", "lunch", "dinner"],
+        priceText: "30.000 – 50.000 VNĐ",
+        keywords: ["phở bò", "phở"],
+        image: "https://commons.wikimedia.org/wiki/Special:FilePath/Pho-Beef-Noodles-2008.jpg"
+    },
+    {
+        id: "pho-ga",
+        name: "Phở Gà",
+        description: "Phiên bản thanh nhẹ hơn của phở, nước dùng ngọt từ xương gà, ăn kèm lá chanh thái chỉ.",
+        category: "Cơm/Bún/Phở",
+        mealTypes: ["breakfast", "lunch"],
+        priceText: "30.000 – 45.000 VNĐ",
+        keywords: ["phở gà", "phở"],
+        image: "https://commons.wikimedia.org/wiki/Special:FilePath/Chicken-pho-vietnamese-soup.JPG"
+    },
+    {
+        id: "com-tam",
+        name: "Cơm Tấm",
+        description: "Cơm gạo tấm, sườn nướng, bì, chả trứng — bữa trưa no bụng kiểu miền Nam.",
+        category: "Cơm/Bún/Phở",
+        mealTypes: ["lunch", "dinner"],
+        priceText: "30.000 – 45.000 VNĐ",
+        keywords: ["cơm tấm"],
+        image: "https://commons.wikimedia.org/wiki/Special:FilePath/Com-Tam-2008.jpg"
+    },
+    {
+        id: "bun-dau-mam-tom",
+        name: "Bún Đậu Mắm Tôm",
+        description: "Đậu rán, bún lá, chả cốm chấm mắm tôm dậy mùi — món thử thách lòng can đảm nhưng gây nghiện.",
+        category: "Cơm/Bún/Phở",
+        mealTypes: ["lunch", "dinner"],
+        priceText: "35.000 – 60.000 VNĐ",
+        keywords: ["bún đậu", "mắm tôm"],
+        image: "https://static.vinwonders.com/production/2025/06/met-bun-dau-mam-tom-vung-tau.jpg"
+    },
+    {
+        id: "bun-cha",
+        name: "Bún Chả",
+        description: "Chả viên và chả miếng nướng than hoa, chấm cùng bún và nước mắm chua ngọt — đặc sản Hà Nội.",
+        category: "Cơm/Bún/Phở",
+        mealTypes: ["lunch", "dinner"],
+        priceText: "30.000 – 45.000 VNĐ",
+        keywords: ["bún chả"],
+        image: "https://static.vinwonders.com/production/bun-cha-ha-noi-01.jpg"
+    },
+    {
+        id: "bun-bo-hue",
+        name: "Bún Bò Huế",
+        description: "Nước dùng cay nồng sả ớt, đậm vị mắm ruốc, ăn cùng chả cua và giò heo.",
+        category: "Cơm/Bún/Phở",
+        mealTypes: ["breakfast", "lunch"],
+        priceText: "30.000 – 45.000 VNĐ",
+        keywords: ["bún bò huế", "bún bò"],
+        image: "https://static.vinwonders.com/production/bun-bo-hue-1.jpg"
+    },
+    {
+        id: "mi-quang",
+        name: "Mì Quảng",
+        description: "Sợi mì vàng nghệ, nước dùng sánh đậm, ăn kèm tôm thịt, trứng cút và bánh đa.",
+        category: "Cơm/Bún/Phở",
+        mealTypes: ["lunch", "dinner"],
+        priceText: "30.000 – 45.000 VNĐ",
+        keywords: ["mì quảng"],
+        image: "https://static.vinwonders.com/2022/06/mi-quang-da-nang-1-1.jpg"
+    },
+    {
+        id: "xoi-xeo",
+        name: "Xôi Xéo",
+        description: "Xôi nếp dẻo, đậu xanh nghiền, hành phi thơm lừng — bữa sáng quen thuộc của người Hà Nội.",
+        category: "Cơm/Bún/Phở",
+        mealTypes: ["breakfast"],
+        priceText: "15.000 – 25.000 VNĐ",
+        keywords: ["xôi xéo", "xôi"],
+        image: "https://static.vinwonders.com/production/Xoi-xeo.jpg"
+    },
+    {
+        id: "banh-mi",
+        name: "Bánh Mì",
+        description: "Vỏ giòn rụm, nhân pate, chả, trứng ốp la — bữa sáng hoặc ăn vặt \"cân\" mọi lúc.",
+        category: "Ăn Vặt",
+        mealTypes: ["breakfast", "snack"],
+        priceText: "15.000 – 25.000 VNĐ",
+        keywords: ["bánh mì"],
+        image: "https://static.vinwonders.com/production/banh-mi-ha-noi-0.jpg"
+    },
+    {
+        id: "nem-chua-ran",
+        name: "Nem Chua Rán",
+        description: "Nem chua lên men nhẹ, chiên giòn, chấm tương ớt — món vặt vỉa hè không thể bỏ qua.",
+        category: "Ăn Vặt",
+        mealTypes: ["snack"],
+        priceText: "15.000 – 25.000 VNĐ",
+        keywords: ["nem chua rán", "nem chua"],
+        image: "https://vietnam-amazing.com/wp-content/uploads/2023/12/nem-chua-ran-e1701403891504-678x381.jpeg"
+    },
+    {
+        id: "banh-xeo",
+        name: "Bánh Xèo",
+        description: "Vỏ bánh giòn tan nhân tôm thịt giá đỗ, cuốn rau sống chấm nước mắm chua ngọt.",
+        category: "Ăn Vặt",
+        mealTypes: ["dinner", "snack"],
+        priceText: "25.000 – 40.000 VNĐ",
+        keywords: ["bánh xèo"],
+        image: "https://static.vinwonders.com/production/banh-xeo-ngon-ha-noi-2.jpg"
+    },
+    {
+        id: "che-thai",
+        name: "Chè Thái",
+        description: "Thạch nhiều màu, trái cây, nước cốt dừa béo ngậy — giải nhiệt cực đã vào ngày nóng.",
+        category: "Bánh/Tráng Miệng",
+        mealTypes: ["snack"],
+        priceText: "15.000 – 25.000 VNĐ",
+        keywords: ["chè thái", "chè"],
+        image: "https://photo-baomoi.bmcdn.me/w700_r1/2026_07_21_83_55659398/96d188eac5a12cff75b0.jpg"
+    },
+    {
+        id: "oc-luoc",
+        name: "Ốc Luộc",
+        description: "Ốc tươi luộc sả, chấm nước mắm gừng cay nồng — món ăn chơi buổi tối quen thuộc của giới trẻ Hà Nội.",
+        category: "Ăn Vặt",
+        mealTypes: ["dinner", "snack"],
+        priceText: "30.000 – 60.000 VNĐ",
+        keywords: ["ốc luộc", "ốc"],
+        image: "https://static.vinwonders.com/production/oc-luoc-ha-noi-1.jpg"
+    },
+    {
+        id: "ga-ran",
+        name: "Gà Rán",
+        description: "Gà tẩm bột chiên vàng giòn rụm, thơm lừng — vừa làm món ăn vặt vừa no bụng được bữa chính.",
+        category: "Ăn Vặt",
+        mealTypes: ["lunch", "dinner", "snack"],
+        priceText: "25.000 – 45.000 VNĐ",
+        keywords: ["gà rán"],
+        image: "https://static1.squarespace.com/static/5fee116050339566e9b38f09/5fee11df5abd827cad1a68c9/67c79935e60afb37c9886499/1741360470879/Screenshot+2025-03-04+at+7.25.58+PM.png?format=1500w"
     }
-  });
-
-  return { data, error };
-}
-
-export async function signInUser(username, password) {
-  const cleanUsername = String(username).trim().toLowerCase().replace(/[^a-z0-9._-]/g, '_');
-  const syntheticEmail = `${cleanUsername}@chualangeats.user`;
-
-  const { data, error } = await supabaseClient.auth.signInWithPassword({
-    email: syntheticEmail,
-    password: password
-  });
-
-  return { data, error };
-}
-
-export async function signOutUser() {
-  const { error } = await supabaseClient.auth.signOut();
-  if (!error && typeof window !== 'undefined') {
-    window.location.href = 'login.html';
-  }
-  return { error };
-}
-
-// =============================================================================
-// STORAGE HELPERS
-// =============================================================================
-
-export async function uploadMedia(file, path) {
-  const fileExt = file.name.includes('.') ? file.name.split('.').pop() : 'jpg';
-  const fileName = `${Math.random().toString(36).substring(2)}_${Date.now()}.${fileExt}`;
-  const filePath = `${path}/${fileName}`;
-
-  const { error: uploadError } = await supabaseClient.storage
-    .from('spot-media')
-    .upload(filePath, file);
-
-  if (uploadError) throw uploadError;
-
-  const { data } = supabaseClient.storage
-    .from('spot-media')
-    .getPublicUrl(filePath);
-
-  return data.publicUrl;
-}
-
-// =============================================================================
-// DATA HELPERS
-// =============================================================================
-// Every function below resolves to a plain { data, error } (or { success, error })
-// object and never throws, so every caller can safely do:
-//   const { data, error } = await someHelper(...);
-//   if (error) { ...handle it...; return; }
-// without needing a try/catch to catch rejected auth or database failures.
-// (A try/catch around the call is still fine to keep as a second safety net for
-// genuinely unexpected errors, e.g. a network drop — it just won't be load-bearing.)
-
-export async function createSpot(spotData, foodFiles = [], menuFile = null) {
-  const { user, error: authError } = await getCurrentUser();
-  if (!user) {
-    return { data: null, error: authError || new Error('Bạn cần đăng nhập để thêm quán.') };
-  }
-
-  try {
-    // Upload food images
-    const foodUrls = [];
-    if (Array.isArray(foodFiles)) {
-      for (const file of foodFiles) {
-        if (file) {
-          const url = await uploadMedia(file, 'food');
-          foodUrls.push(url);
-        }
-      }
-    }
-
-    // Upload menu image if present
-    let menuUrl = null;
-    if (menuFile) {
-      menuUrl = await uploadMedia(menuFile, 'menu');
-    }
-
-    // Handle price parsing safely
-    const minPrice = Number(spotData.minPrice ?? spotData.min_price ?? 0);
-    const maxPrice = Number(spotData.maxPrice ?? spotData.max_price ?? 0);
-    const distMins = Number(spotData.distanceMinutes ?? spotData.distance_minutes ?? 5);
-
-    const payload = {
-      name: String(spotData.name || '').trim(),
-      address: String(spotData.address || '').trim(),
-      category: spotData.category || 'Cơm/Bún/Phở',
-      meal_type: spotData.mealType || spotData.meal_type || 'lunch',
-      min_price: minPrice,
-      max_price: maxPrice,
-      distance_minutes: distMins,
-      opening_time: spotData.openTime || spotData.opening_time || null,
-      closing_time: spotData.closeTime || spotData.closing_time || null,
-      lat: typeof spotData.lat === 'number' ? spotData.lat : null,
-      lng: typeof spotData.lng === 'number' ? spotData.lng : null,
-      description: String(spotData.description || '').trim(),
-      tags: Array.isArray(spotData.tags) ? spotData.tags : [],
-      food_images: foodUrls,
-      menu_image: menuUrl,
-      created_by: user.id,
-      // Always submit new spots as pending review — never let the client
-      // (or a stale DB default) publish a spot straight to the public feed.
-      // fetchSpots() only shows status = 'approved', so this is what makes
-      // every new spot wait for an admin to approve it in admin.html.
-      status: 'pending'
-    };
-
-    const { data, error } = await supabaseClient
-      .from('spots')
-      .insert([payload])
-      .select();
-
-    if (error) return { data: null, error };
-    return { data: data ? data[0] : null, error: null };
-  } catch (err) {
-    // Catches uploadMedia() throwing on a storage failure, or any other
-    // unexpected exception, and folds it into the normal { data, error } shape.
-    return { data: null, error: err };
-  }
-}
-
-export async function fetchSpots() {
-  try {
-    const { data, error } = await supabaseClient
-      .from('spots')
-      .select('*, profiles ( username, badge ), reviews ( quality_rating, hygiene_rating )')
-      .eq('status', 'approved')
-      .order('created_at', { ascending: false });
-
-    if (error) return { data: [], error };
-    return { data: data || [], error: null };
-  } catch (err) {
-    return { data: [], error: err };
-  }
-}
-
-export async function fetchReviews(spotId) {
-  try {
-    const { data, error } = await supabaseClient
-      .from('reviews')
-      .select('*, profiles ( username, badge )')
-      .eq('spot_id', spotId)
-      .order('created_at', { ascending: false });
-
-    if (error) return { data: [], error };
-    return { data: data || [], error: null };
-  } catch (err) {
-    return { data: [], error: err };
-  }
-}
-
-export async function createReview(reviewData) {
-  const { user, error: authError } = await getCurrentUser();
-  if (!user) {
-    return { data: null, error: authError || new Error('Bạn cần đăng nhập để gửi đánh giá.') };
-  }
-
-  const payload = {
-    spot_id: reviewData.spot_id ?? reviewData.spotId,
-    user_id: user.id,
-    quality_rating: reviewData.quality_rating ?? reviewData.qualityRating ?? null,
-    hygiene_rating: reviewData.hygiene_rating ?? reviewData.hygieneRating ?? null,
-    price_paid: reviewData.price_paid ?? reviewData.pricePaid ?? null,
-    comment: reviewData.comment ? String(reviewData.comment).trim() : null,
-  };
-
-  try {
-    // One review per user per spot is enforced in Postgres by a
-    // UNIQUE(spot_id, user_id) constraint. Upserting on that same pair means
-    // a second submission updates the user's existing review in place
-    // instead of erroring against the constraint or creating a duplicate.
-    const { data, error } = await supabaseClient
-      .from('reviews')
-      .upsert([payload], { onConflict: 'spot_id,user_id' })
-      .select();
-
-    if (error) return { data: null, error };
-    return { data: data ? data[0] : null, error: null };
-  } catch (err) {
-    return { data: null, error: err };
-  }
-}
-
-export async function fetchMyReview(spotId, userId) {
-  try {
-    const { data, error } = await supabaseClient
-      .from('reviews')
-      .select('*')
-      .eq('spot_id', spotId)
-      .eq('user_id', userId)
-      .maybeSingle();
-
-    if (error) return { data: null, error };
-    return { data: data || null, error: null };
-  } catch (err) {
-    return { data: null, error: err };
-  }
-}
-
-export async function reportItem(type, itemId, reason) {
-  const { user, error: authError } = await getCurrentUser();
-  if (!user) {
-    return { data: null, error: authError || new Error('Bạn cần đăng nhập để gửi báo cáo.') };
-  }
-
-  if (type !== 'spot' && type !== 'review') {
-    return { data: null, error: new Error(`Loại báo cáo không hợp lệ: "${type}".`) };
-  }
-
-  const payload = {
-    reported_by: user.id,
-    reason: String(reason || '').trim(),
-    spot_id: type === 'spot' ? itemId : null,
-    review_id: type === 'review' ? itemId : null,
-  };
-
-  try {
-    const { data, error } = await supabaseClient
-      .from('reports')
-      .insert([payload])
-      .select();
-
-    if (error) return { data: null, error };
-    return { data, error: null };
-  } catch (err) {
-    return { data: null, error: err };
-  }
-}
-
-export async function deleteItem(type, itemId) {
-  const { user, error: authError } = await getCurrentUser();
-  if (!user) {
-    return { success: false, error: authError || new Error('Bạn không có quyền xóa mục này.') };
-  }
-
-  if (type !== 'spot' && type !== 'review') {
-    return { success: false, error: new Error(`Loại mục không hợp lệ: "${type}".`) };
-  }
-
-  const table = type === 'spot' ? 'spots' : 'reviews';
-
-  try {
-    const { error } = await supabaseClient
-      .from(table)
-      .delete()
-      .eq('id', itemId);
-
-    if (error) return { success: false, error };
-    return { success: true, error: null };
-  } catch (err) {
-    return { success: false, error: err };
-  }
-}
-
-// =============================================================================
-// ADMIN HELPERS
-// =============================================================================
-// Every call below is still gated server-side by the admin RLS policies
-// (see the SQL migration) — a non-admin account gets a Postgres permission
-// error back, regardless of whether admin.html is reachable.
-
-export async function fetchAdminOverview() {
-  try {
-    const count = async (table, status) => {
-      let q = supabaseClient.from(table).select('*', { count: 'exact', head: true });
-      if (status) q = q.eq('status', status);
-      const { count, error } = await q;
-      if (error) throw error;
-      return count ?? 0;
-    };
-
-    const [totalSpots, pendingSpots, pendingReports, totalUsers] = await Promise.all([
-      count('spots'),
-      count('spots', 'pending'),
-      count('reports', 'pending'),
-      count('profiles'),
-    ]);
-
-    return { data: { totalSpots, pendingSpots, pendingReports, totalUsers }, error: null };
-  } catch (err) {
-    return { data: null, error: err };
-  }
-}
-
-export async function fetchAdminAnalytics() {
-  try {
-    const [reviewsRes, resolvedRes, categoryRes, reasonRes] = await Promise.all([
-      supabaseClient.from('reviews').select('*', { count: 'exact', head: true }),
-      supabaseClient.from('reports').select('*', { count: 'exact', head: true }).eq('status', 'resolved'),
-      supabaseClient.from('spots').select('category').limit(500),
-      supabaseClient.from('reports').select('reason').limit(500),
-    ]);
-    if (reviewsRes.error) throw reviewsRes.error;
-    if (resolvedRes.error) throw resolvedRes.error;
-    if (categoryRes.error) throw categoryRes.error;
-    if (reasonRes.error) throw reasonRes.error;
-
-    const tally = (rows, key) => {
-      const counts = new Map();
-      (rows || []).forEach((row) => counts.set(row[key], (counts.get(row[key]) || 0) + 1));
-      return Array.from(counts, ([label, count]) => ({ label, count })).sort((a, b) => b.count - a.count);
-    };
-
-    return {
-      data: {
-        totalReviews: reviewsRes.count ?? 0,
-        resolvedReports: resolvedRes.count ?? 0,
-        categoryBreakdown: tally(categoryRes.data, 'category'),
-        reasonBreakdown: tally(reasonRes.data, 'reason'),
-      },
-      error: null,
-    };
-  } catch (err) {
-    return { data: null, error: err };
-  }
-}
-
-export async function fetchUsers(query = '') {
-  try {
-    let q = supabaseClient
-      .from('profiles')
-      .select('id, username, email, role, is_banned, created_at')
-      .order('created_at', { ascending: false })
-      .limit(100);
-
-    const trimmed = String(query || '').trim();
-    if (trimmed) {
-      q = q.or(`username.ilike.%${trimmed}%,email.ilike.%${trimmed}%`);
-    }
-
-    const { data, error } = await q;
-    if (error) return { data: [], error };
-    return { data: data || [], error: null };
-  } catch (err) {
-    return { data: [], error: err };
-  }
-}
-
-export async function setUserBanned(userId, banned) {
-  try {
-    const { error } = await supabaseClient.from('profiles').update({ is_banned: banned }).eq('id', userId);
-    if (error) return { success: false, error };
-    return { success: true, error: null };
-  } catch (err) {
-    return { success: false, error: err };
-  }
-}
-
-export async function setUserRole(userId, role) {
-  if (role !== 'admin' && role !== 'user') {
-    return { success: false, error: new Error(`Quyền không hợp lệ: "${role}".`) };
-  }
-  try {
-    const { error } = await supabaseClient.from('profiles').update({ role }).eq('id', userId);
-    if (error) return { success: false, error };
-    return { success: true, error: null };
-  } catch (err) {
-    return { success: false, error: err };
-  }
-}
-
-export async function fetchPendingReports() {
-  try {
-    const { data, error } = await supabaseClient
-      .from('reports')
-      .select(
-        'id, reason, status, created_at, spot_id, review_id, spots:spot_id(id, name, address), reviews:review_id(id, comment, spot_id)'
-      )
-      .eq('status', 'pending')
-      .order('created_at', { ascending: false })
-      .limit(100);
-    if (error) return { data: [], error };
-    return { data: data || [], error: null };
-  } catch (err) {
-    return { data: [], error: err };
-  }
-}
-
-export async function resolveReport(reportId) {
-  try {
-    const { error } = await supabaseClient.from('reports').update({ status: 'resolved' }).eq('id', reportId);
-    if (error) return { success: false, error };
-    return { success: true, error: null };
-  } catch (err) {
-    return { success: false, error: err };
-  }
-}
-
-export async function fetchPendingSpots() {
-  try {
-    const { data, error } = await supabaseClient
-      .from('spots')
-      .select('id, name, address, category, status, created_at, created_by')
-      .eq('status', 'pending')
-      .order('created_at', { ascending: true })
-      .limit(100);
-    if (error) return { data: [], error };
-    return { data: data || [], error: null };
-  } catch (err) {
-    return { data: [], error: err };
-  }
-}
-
-export async function approveSpot(spotId) {
-  try {
-    const { error } = await supabaseClient.from('spots').update({ status: 'approved' }).eq('id', spotId);
-    if (error) return { success: false, error };
-    return { success: true, error: null };
-  } catch (err) {
-    return { success: false, error: err };
-  }
-}
+];
