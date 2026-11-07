@@ -126,8 +126,16 @@
                 </div>
 
                 <div>
-                    <label for="tags" class="block font-semibold mb-1">Thẻ / Tags (phân cách bằng dấu phẩy)</label>
-                    <input type="text" id="tags" placeholder="ftuer, bun_dau, ngon_boduong" class="w-full bg-palette-tofu border border-palette-cream rounded-xl p-3 font-medium focus:ring-2 focus:ring-palette-ember focus:outline-none">
+                    <label for="mainDish" class="block font-semibold mb-1">Món Chính Của Quán</label>
+                    <select id="mainDish" class="w-full bg-palette-tofu border border-palette-cream rounded-xl p-3 font-medium focus:ring-2 focus:ring-palette-ember focus:outline-none">
+                        <option value="">— Chọn món chính —</option>
+                    </select>
+                    <p class="text-[11px] text-palette-matcha/50 mt-1">Chọn đúng món giúp quán của bạn tự động hiện ra khi ai đó quay trúng món này ở mục "Hôm nay ăn gì?" trên trang chủ.</p>
+                </div>
+
+                <div>
+                    <label for="tags" class="block font-semibold mb-1">Thẻ Tùy Chỉnh (tuỳ chọn, phân cách bằng dấu phẩy)</label>
+                    <input type="text" id="tags" placeholder="near ftu, giao hàng nhanh" class="w-full bg-palette-tofu border border-palette-cream rounded-xl p-3 font-medium focus:ring-2 focus:ring-palette-ember focus:outline-none">
                 </div>
 
                 <!-- Dropzone Ảnh Món -->
@@ -183,6 +191,19 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script type="module">
         import { getCurrentUser, createSpot } from './js/supabase.js?v=6';
+        import { DISHES } from './js/dishes.js';
+
+        // Populate the "Món Chính" dropdown from the same dish list the
+        // homepage randomizer uses, so picking one here gives the vendor an
+        // exact-match tag ("Gà Rán", not "friedchicken") instead of relying
+        // on free-text guessing to line up later.
+        const mainDishSelect = document.getElementById("mainDish");
+        if (mainDishSelect) {
+            mainDishSelect.innerHTML =
+                '<option value="">— Chọn món chính —</option>' +
+                DISHES.map((d) => `<option value="${d.id}">${d.name}</option>`).join("") +
+                '<option value="other">Món khác (không có trong danh sách)</option>';
+        }
 
         let foodFiles = [];
         let menuFile = null;
@@ -493,10 +514,18 @@
             submitBtn.disabled = true;
             submitBtnText.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang tải dữ liệu...';
 
-            const tags = document.getElementById("tags").value
+            const customTags = document.getElementById("tags").value
                 .split(",")
                 .map((t) => t.trim())
                 .filter(Boolean);
+
+            // The main dish's canonical name (same string used in js/dishes.js,
+            // which "Hôm nay ăn gì?" matches against) goes in first so this
+            // vendor is reliably found later — custom tags like "near ftu"
+            // come after it.
+            const mainDishId = document.getElementById("mainDish").value;
+            const mainDish = DISHES.find((d) => d.id === mainDishId);
+            const tags = mainDish ? [mainDish.name, ...customTags] : customTags;
 
             const spotData = {
                 name: document.getElementById("spotName").value.trim(),
