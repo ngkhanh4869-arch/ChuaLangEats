@@ -358,8 +358,18 @@
         let geocodeDebounce = null;
         const addressInput = document.getElementById("address");
 
-        function buildGeocodeQuery(address) {
-            return `${address}, Chùa Láng, Đống Đa, Hà Nội, Việt Nam`;
+        // We try the address exactly as typed FIRST, and only pad it with
+        // our own ward/district/city context as a fallback. This matters
+        // because a short input like the placeholder example ("Số 12 Ngõ
+        // 84 Chùa Láng") has no city context of its own and needs ours —
+        // but a full address pasted straight from Google Maps already has
+        // its own ward/district/city/country. Appending ours on top of
+        // that duplicates everything ("...Đống Đa, Hà Nội 100000, Vietnam,
+        // Chùa Láng, Đống Đa, Hà Nội, Việt Nam") and no geocoder can parse
+        // that, so we never do both in the same query — raw first, padded
+        // only if raw comes back empty.
+        function buildGeocodeQueries(address) {
+            return [address, `${address}, Chùa Láng, Đống Đa, Hà Nội, Việt Nam`];
         }
 
         // ---------------------------------------------------------------
@@ -436,8 +446,11 @@
             const locationError = document.getElementById("locationError");
             if (address.length < 8) return; // too short to be worth a lookup
 
-            const fullQuery = buildGeocodeQuery(address);
-            const found = (await geocodeWithGoong(fullQuery)) || (await geocodeWithNominatim(fullQuery));
+            let found = null;
+            for (const query of buildGeocodeQueries(address)) {
+                found = (await geocodeWithGoong(query)) || (await geocodeWithNominatim(query));
+                if (found) break;
+            }
 
             if (!found) {
                 if (locationError) {
