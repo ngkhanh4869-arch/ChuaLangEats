@@ -1,82 +1,1400 @@
-// js/directions.js
-//
-// Free "get directions" deep links to Google Maps — NOT the paid Maps
-// JavaScript/Directions/Places API. We build a plain URL; Google Maps (app
-// or web) does the geocoding/routing on the visitor's own device when they
-// open it. No API key, no billing, no quota.
-// Docs: https://developers.google.com/maps/documentation/urls/get-started
-//
-// Origin priority, all free:
-//   1. The visitor's live location, via the browser's own Geolocation API
-//      (a standard web API — nothing to do with Google's paid APIs).
-//   2. If they deny/skip that (or it's unsupported/slow), their university
-//      gate, if their account badge is one of the three known schools.
-//   3. Otherwise, no origin at all — Google Maps decides (its own prompt,
-//      or the visitor types a starting point themselves).
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ăn Gì Chùa Láng? - Campus Food & Vendor Finder</title>
+    <link rel="icon" type="image/png" href="assets/favicon.png">
+    <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Leaflet CSS for Map -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        // Same brand tokens as login.html/profile.html/add-spot.html/feed.html
+                        // (palette.ember/cream/matcha/yolk/tofu), extended with generated
+                        // 50-900 shade ramps so this page's existing tint/shade usage
+                        // (light backgrounds, hover states, etc.) keeps working but now
+                        // renders in the real brand red/gold instead of stock Tailwind
+                        // rose/amber.
+                        palette: {
+                            ember: {
+                                DEFAULT: '#EE3F24',
+                                50: '#feeeec',
+                                100: '#fcdad4',
+                                200: '#f8b4aa',
+                                300: '#f48371',
+                                400: '#f05138',
+                                500: '#ee3f24',
+                                600: '#d82b11',
+                                700: '#ae230d',
+                                800: '#831a0a',
+                                900: '#5d1307',
+                            },
+                            cream: '#FFEFCB',
+                            matcha: '#023820',
+                            yolk: {
+                                DEFAULT: '#F9A11B',
+                                50: '#fef7eb',
+                                100: '#feedd2',
+                                200: '#fddaa6',
+                                300: '#fbc26a',
+                                400: '#faa92e',
+                                500: '#f9a11b',
+                                600: '#e58d06',
+                                700: '#b87105',
+                                800: '#8c5604',
+                                900: '#643d03',
+                            },
+                            tofu: '#FFF4E6',
+                        },
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        #map { height: 320px; width: 100%; border-radius: 1rem; z-index: 1; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #FFEFCB; border-radius: 8px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(2, 56, 32, 0.25); border-radius: 8px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(2, 56, 32, 0.45); }
+        .vendor-card:hover { transform: translateY(-3px); }
 
-// Main-gate coordinates, looked up via Google Places:
-//   FTU: 91 P. Chùa Láng, Láng, Hà Nội
-//   DAV: 69 P. Chùa Láng, Láng, Hà Nội
-//   VYA (Học viện Thanh thiếu niên Việt Nam): 58 Đ. Nguyễn Chí Thanh, Láng, Hà Nội
-// These are each school's main listed pin, which may sit a few meters from
-// the exact gate students walk out of — nudge the numbers if you know the
-// real gate is around a corner.
-export const UNIVERSITY_GATES = {
-    "FTUer Verified": "21.023033,105.805437",
-    "DAVer Verified": "21.022984,105.806509",
-    "VYAer Verified": "21.022332,105.809333",
-};
+        /* Case-opening reel ("Hôm nay ăn gì?") */
+        .case-card-img { transition: transform .2s ease, box-shadow .2s ease; }
+        .case-card-win .case-card-img {
+            animation: caseWinPulse 0.9s ease-in-out 2;
+            box-shadow: 0 0 0 2px #FFF4E6, 0 0 18px 4px rgba(249, 161, 27, 0.85);
+        }
+        @keyframes caseWinPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+    </style>
+</head>
+<body class="bg-palette-tofu text-palette-matcha font-sans antialiased min-h-screen">
 
-function buildMapsUrl(spot, origin) {
-    const hasCoords = typeof spot.lat === "number" && typeof spot.lng === "number";
-    const destination = hasCoords ? `${spot.lat},${spot.lng}` : (spot.address || "");
-    if (!destination) return null;
+    <!-- SHARED APP NAVIGATION (sidebar / drawer, see js/nav.js) -->
+    <div id="app-nav"></div>
+    <script type="module" src="js/nav.js"></script>
 
-    const params = new URLSearchParams({
-        api: "1",
-        destination,
-        travelmode: "walking",
-    });
-    if (origin) params.set("origin", origin);
+    <div id="appContent" class="lg:pl-64 min-h-screen flex flex-col">
 
-    return `https://www.google.com/maps/dir/?${params.toString()}`;
-}
+    <!-- "HÔM NAY ĂN GÌ?" — VIETNAMESE MEAL RANDOMIZER (CS:GO-style case-opening reel) -->
+    <section class="bg-gradient-to-r from-palette-ember-600 via-palette-ember-500 to-palette-yolk-500 text-white py-6 shadow-inner">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
-// Call this straight from a click handler (never after an `await`) — it
-// pre-opens the destination tab synchronously so browsers don't treat the
-// later redirect as a popup, then fills in the best origin it can get.
-export function openDirections(spot, badge) {
-    const gateOrigin = UNIVERSITY_GATES[badge] || null;
-    const fallbackUrl = buildMapsUrl(spot, gateOrigin);
-    if (!fallbackUrl) return;
+            <div class="text-center lg:text-left space-y-1.5 mb-3">
+                <div class="inline-flex items-center gap-1.5 bg-white/20 backdrop-blur-md px-2.5 py-0.5 rounded-full text-xs font-medium text-white">
+                    <i class="fa-solid fa-dice text-palette-yolk-200"></i>
+                    <span>Món Ngẫu Nhiên Mỗi Ngày</span>
+                </div>
+                <h2 class="text-xl sm:text-2xl font-extrabold tracking-tight">Hôm nay ăn gì?</h2>
+                <p class="text-palette-ember-100 text-xs sm:text-sm max-w-lg mx-auto lg:mx-0">Mở hộp để nhận gợi ý món.</p>
+            </div>
 
-    const win = window.open("about:blank", "_blank");
-    const go = (url) => {
-        if (win && !win.closed) win.location = url;
-        else window.location.href = url; // popup got blocked anyway — navigate in place
-    };
+            <!-- Meal-time chips -->
+            <div class="flex flex-wrap justify-center lg:justify-start gap-1.5 mb-3" id="randomizerMealChips">
+                <button type="button" data-meal="all" onclick="setRandomizerMeal('all')" class="randomizer-chip bg-white text-palette-ember-600 text-[11px] font-bold px-3 py-1.5 rounded-full transition">Bất kỳ</button>
+                <button type="button" data-meal="breakfast" onclick="setRandomizerMeal('breakfast')" class="randomizer-chip bg-white/15 hover:bg-white/25 text-white text-[11px] font-bold px-3 py-1.5 rounded-full transition">Sáng</button>
+                <button type="button" data-meal="lunch" onclick="setRandomizerMeal('lunch')" class="randomizer-chip bg-white/15 hover:bg-white/25 text-white text-[11px] font-bold px-3 py-1.5 rounded-full transition">Trưa</button>
+                <button type="button" data-meal="dinner" onclick="setRandomizerMeal('dinner')" class="randomizer-chip bg-white/15 hover:bg-white/25 text-white text-[11px] font-bold px-3 py-1.5 rounded-full transition">Tối</button>
+                <button type="button" data-meal="snack" onclick="setRandomizerMeal('snack')" class="randomizer-chip bg-white/15 hover:bg-white/25 text-white text-[11px] font-bold px-3 py-1.5 rounded-full transition">Ăn vặt</button>
+            </div>
 
-    if (!navigator.geolocation) {
-        go(fallbackUrl);
-        return;
-    }
+            <!-- Case-opening reel: a long horizontal strip of dish cards races past a
+                 fixed center pointer and settles on the chosen dish, like a CS:GO case
+                 opening / slot machine. Cards are injected by spinRandomizer() in the
+                 script below, not written here. -->
+            <div class="relative mb-3">
+                <div class="pointer-events-none absolute left-1/2 top-0 bottom-0 w-[3px] -translate-x-1/2 bg-white z-20 shadow-[0_0_8px_rgba(255,255,255,0.8)]"></div>
+                <div class="pointer-events-none absolute left-1/2 -top-1.5 -translate-x-1/2 z-20 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[7px] border-t-white"></div>
+                <div class="pointer-events-none absolute left-1/2 -bottom-1.5 -translate-x-1/2 z-20 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-b-[7px] border-b-white"></div>
 
-    let settled = false;
-    const finish = (url) => {
-        if (settled) return;
-        settled = true;
-        go(url);
-    };
+                <div id="caseViewport" class="relative overflow-hidden rounded-xl bg-black/25 border border-white/20 h-28 sm:h-32">
+                    <div id="caseTrack" class="flex items-center h-full gap-2 absolute left-0 top-0 px-2"></div>
+                    <div class="pointer-events-none absolute inset-y-0 left-0 w-10 sm:w-16 bg-gradient-to-r from-palette-ember-600 to-transparent z-10"></div>
+                    <div class="pointer-events-none absolute inset-y-0 right-0 w-10 sm:w-16 bg-gradient-to-l from-palette-ember-600 to-transparent z-10"></div>
+                </div>
+            </div>
 
-    navigator.geolocation.getCurrentPosition(
-        (pos) => {
-            const liveOrigin = `${pos.coords.latitude},${pos.coords.longitude}`;
-            finish(buildMapsUrl(spot, liveOrigin) || fallbackUrl);
-        },
-        () => finish(fallbackUrl), // permission denied / position unavailable
-        { timeout: 4000, maximumAge: 5 * 60 * 1000 }
-    );
+            <div class="flex items-center justify-center lg:justify-start gap-3 flex-wrap">
+                <button onclick="spinRandomizer()" id="spinBtn" class="inline-flex items-center gap-2 bg-white text-palette-ember-600 hover:bg-palette-cream font-bold text-sm px-5 py-2.5 rounded-xl shadow-sm transition disabled:opacity-60 disabled:cursor-not-allowed">
+                    <i class="fa-solid fa-box-open"></i> Mở hộp!
+                </button>
+                <p id="randomizerIdleHint" class="text-white/75 text-xs">Nhấn để mở hộp và nhận gợi ý món ăn hôm nay</p>
+            </div>
 
-    // Belt-and-suspenders in case getCurrentPosition never calls back.
-    setTimeout(() => finish(fallbackUrl), 5000);
-}
+            <!-- Result panel, revealed once the reel settles -->
+            <div id="randomizerResultPanel" class="hidden mt-3 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-3 flex flex-col sm:flex-row sm:items-center gap-3">
+                <div class="flex items-start gap-3 flex-1 min-w-0">
+                    <div class="h-16 w-16 sm:h-20 sm:w-20 rounded-xl overflow-hidden bg-palette-tofu shrink-0">
+                        <img id="randomizerImg" src="" alt="" class="w-full h-full object-cover" onerror="this.src='https://placehold.co/200x200/fff1f2/be123c?text=Mon+An+Viet'">
+                    </div>
+                    <div class="min-w-0">
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <h3 id="randomizerName" class="font-extrabold text-white text-base leading-snug"></h3>
+                            <span id="randomizerMealBadge" class="bg-palette-matcha/80 text-white text-[10px] font-bold px-2 py-0.5 rounded-md"></span>
+                        </div>
+                        <p id="randomizerDesc" class="text-white/85 text-[11px] mt-0.5 leading-relaxed"></p>
+                        <p id="randomizerPrice" class="text-palette-yolk-200 text-[11px] font-bold mt-1 flex items-center gap-1"></p>
+                    </div>
+                </div>
+                <div class="shrink-0 w-full sm:w-44" id="randomizerCta"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- MAIN CONTENT AREA -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-grow w-full">
+
+        <!-- PAGE ACTIONS -->
+        <div class="flex flex-wrap items-center justify-end gap-2 mb-4">
+            <button onclick="openReviewModal()" class="inline-flex items-center gap-2 bg-palette-ember-600 hover:bg-palette-ember-700 text-white text-xs sm:text-sm font-semibold px-3 sm:px-4 py-2 rounded-xl transition shadow-sm hover:shadow-palette-ember-100">
+                <i class="fa-solid fa-pen-to-square text-xs"></i>
+                <span class="hidden sm:inline">Viết Đánh Giá</span>
+                <span class="sm:hidden">Đánh giá</span>
+            </button>
+            <button onclick="toggleMapView()" id="mapToggleBtn" class="inline-flex items-center gap-2 bg-palette-tofu hover:bg-palette-cream text-palette-matcha/80 text-xs sm:text-sm font-semibold px-3 py-2 rounded-xl transition">
+                <i class="fa-solid fa-map-location-dot text-palette-ember-600"></i>
+                <span class="hidden md:inline" id="mapToggleText">Xem Bản Đồ</span>
+            </button>
+        </div>
+
+        <!-- SEARCH & FILTER BAR -->
+        <div class="bg-white p-4 rounded-2xl shadow-sm border border-palette-cream mb-6 space-y-4">
+            <!-- Search input -->
+            <div class="relative">
+                <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3.5 text-palette-matcha/40 text-sm"></i>
+                <input type="text" id="searchInput" oninput="applyFilters()" placeholder="Tìm món ăn, tên quán hoặc ngõ (Ví dụ: Cơm tấm, Ngõ 121 Chùa Láng, Bún trộn...)" class="w-full pl-10 pr-4 py-2.5 bg-palette-tofu border border-palette-cream rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-palette-ember-500 focus:bg-white transition">
+            </div>
+
+            <!-- Filter Controls -->
+            <div class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                <!-- Price Filter -->
+                <div>
+                    <label class="block font-semibold text-palette-matcha/70 mb-1"><i class="fa-solid fa-tag text-palette-ember-500 mr-1"></i>Mức Giá Max</label>
+                    <select id="priceFilter" onchange="applyFilters()" class="w-full bg-palette-tofu border border-palette-cream rounded-lg p-2 font-medium text-palette-matcha/80 focus:outline-none focus:ring-2 focus:ring-palette-ember-500">
+                        <option value="all">Tất cả mức giá</option>
+                        <option value="20">Dưới 20.000 VNĐ</option>
+                        <option value="25">Dưới 25.000 VNĐ</option>
+                        <option value="30">Dưới 30.000 VNĐ (Chuẩn SV)</option>
+                    </select>
+                </div>
+
+                <!-- Distance / Walking Time -->
+                <div>
+                    <label class="block font-semibold text-palette-matcha/70 mb-1"><i class="fa-solid fa-person-walking text-palette-ember-500 mr-1"></i>Khoảng cách từ Cổng FTU/DAV</label>
+                    <select id="distanceFilter" onchange="applyFilters()" class="w-full bg-palette-tofu border border-palette-cream rounded-lg p-2 font-medium text-palette-matcha/80 focus:outline-none focus:ring-2 focus:ring-palette-ember-500">
+                        <option value="all">Mọi khoảng cách</option>
+                        <option value="3">&lt; 3 phút đi bộ (&lt; 250m)</option>
+                        <option value="5">&lt; 5 phút đi bộ (&lt; 400m)</option>
+                        <option value="10">&lt; 10 phút đi bộ</option>
+                    </select>
+                </div>
+
+                <!-- Hygiene Rating Filter -->
+                <div>
+                    <label class="block font-semibold text-palette-matcha/70 mb-1"><i class="fa-solid fa-pump-soap text-palette-ember-500 mr-1"></i>Đánh giá Sạch Sẽ</label>
+                    <select id="hygieneFilter" onchange="applyFilters()" class="w-full bg-palette-tofu border border-palette-cream rounded-lg p-2 font-medium text-palette-matcha/80 focus:outline-none focus:ring-2 focus:ring-palette-ember-500">
+                        <option value="all">Tất cả điểm vệ sinh</option>
+                        <option value="4.5">Xuất sắc (&gt;= 4.5/5★)</option>
+                        <option value="4.0">Sạch tốt (&gt;= 4.0/5★)</option>
+                    </select>
+                </div>
+
+                <!-- Meal Type / Time -->
+                <div>
+                    <label class="block font-semibold text-palette-matcha/70 mb-1"><i class="fa-solid fa-clock text-palette-ember-500 mr-1"></i>Bữa Ăn</label>
+                    <select id="mealFilter" onchange="applyFilters()" class="w-full bg-palette-tofu border border-palette-cream rounded-lg p-2 font-medium text-palette-matcha/80 focus:outline-none focus:ring-2 focus:ring-palette-ember-500">
+                        <option value="all">Tất cả thời gian</option>
+                        <option value="breakfast">Ăn sáng nhanh (6h - 9h)</option>
+                        <option value="lunch">Ăn trưa (11h - 13h30)</option>
+                        <option value="dinner">Ăn tối (17h - 20h)</option>
+                        <option value="snack">Ăn vặt / Chiều</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- COLLAPSIBLE MAP SECTION -->
+        <div id="mapContainer" class="hidden mb-6 bg-white p-3 rounded-2xl shadow-sm border border-palette-cream transition-all">
+            <div class="flex items-center justify-between mb-2 px-1">
+                <span class="text-xs font-bold text-palette-matcha/80 flex items-center gap-1.5">
+                    <i class="fa-solid fa-map-pin text-palette-ember-500"></i> Bản đồ khu vực Chùa Láng (FTU / DAV / VYA)
+                </span>
+                <span class="text-[11px] text-palette-matcha/55">Nhấp vào ghim để xem thông tin quán</span>
+            </div>
+            <div id="map"></div>
+        </div>
+
+        <!-- RESULTS STATS & SORTING -->
+        <div class="flex items-center justify-between mb-4 px-1">
+            <div class="text-xs font-semibold text-palette-matcha/70">
+                Tìm thấy <span id="vendorCount" class="text-palette-ember-600 font-bold">0</span> quán ăn phù hợp
+            </div>
+            <div class="flex items-center gap-2 text-xs">
+                <span class="text-palette-matcha/55">Sắp xếp:</span>
+                <select id="sortBy" onchange="applyFilters()" class="bg-white border border-palette-cream rounded-lg px-2 py-1 font-medium text-palette-matcha/80 focus:outline-none">
+                    <option value="rating">Đánh giá cao nhất</option>
+                    <option value="priceAsc">Giá thấp đến cao</option>
+                    <option value="hygiene">Độ sạch sẽ cao nhất</option>
+                    <option value="distance">Gần trường nhất</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- VENDOR CARDS GRID -->
+        <div id="vendorGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            <!-- Dynamic Vendor Cards Insertion from Supabase -->
+        </div>
+
+        <!-- EMPTY STATE -->
+        <div id="emptyState" class="hidden text-center py-12 bg-white rounded-2xl border border-palette-cream">
+            <i class="fa-solid fa-bowl-rice text-4xl text-palette-matcha/25 mb-3"></i>
+            <h3 class="text-base font-bold text-palette-matcha/80">Không tìm thấy quán phù hợp</h3>
+            <p class="text-xs text-palette-matcha/55 mt-1 max-w-md mx-auto">Thử nới lỏng bộ lọc mức giá hoặc xóa từ khóa tìm kiếm để xem thêm gợi ý nhé!</p>
+            <button onclick="resetFilters()" class="mt-4 text-xs font-bold text-palette-ember-600 hover:text-palette-ember-700 bg-palette-ember-50 px-4 py-2 rounded-xl border border-palette-ember-200">Đặt lại bộ lọc</button>
+        </div>
+
+    </main>
+
+    <!-- REVIEW MODAL -->
+    <div id="reviewModal" class="fixed inset-0 bg-palette-matcha/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-palette-cream flex flex-col">
+            <!-- Modal Header -->
+            <div class="p-4 sm:p-5 border-b border-palette-cream flex items-center justify-between sticky top-0 bg-white z-10">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-lg bg-palette-ember-100 text-palette-ember-600 flex items-center justify-center font-bold text-sm">
+                        <i class="fa-solid fa-pen-to-square"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-palette-matcha text-sm sm:text-base leading-tight">Đóng góp đánh giá quán ăn</h3>
+                        <p class="text-[11px] text-palette-matcha/55">Giúp đồng môn Chùa Láng tìm quán ngon rẻ sạch!</p>
+                    </div>
+                </div>
+                <button onclick="closeReviewModal()" class="text-palette-matcha/40 hover:text-palette-matcha/70 w-8 h-8 rounded-full hover:bg-palette-tofu flex items-center justify-center text-sm">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Modal Form Body -->
+            <form id="reviewForm" onsubmit="handleReviewSubmit(event)" class="p-4 sm:p-5 space-y-4 text-xs">
+                <!-- Select Vendor (searchable combobox) -->
+                <div class="relative">
+                    <label for="reviewVendorSearch" class="block font-semibold text-palette-matcha/80 mb-1">Chọn Quán Ăn *</label>
+                    <input type="text" id="reviewVendorSearch" autocomplete="off" required
+                        placeholder="Gõ tên quán để tìm..."
+                        class="w-full bg-palette-tofu border border-palette-cream rounded-xl p-2.5 font-medium text-palette-matcha focus:ring-2 focus:ring-palette-ember-500 focus:outline-none">
+                    <input type="hidden" id="reviewVendorId" value="">
+                    <div id="reviewVendorResults" class="hidden absolute z-20 left-0 right-0 mt-1 bg-white border border-palette-cream rounded-xl shadow-lg max-h-48 overflow-y-auto"></div>
+                    <p id="reviewVendorEmpty" class="hidden text-palette-matcha/40 text-[11px] mt-1">Không tìm thấy quán nào khớp.</p>
+                    <p id="reviewExistingNotice" class="hidden text-palette-ember-700 bg-palette-ember-50/60 border border-palette-ember-100 rounded-lg px-2.5 py-1.5 text-[11px] font-medium mt-1.5">
+                        <i class="fa-solid fa-circle-info mr-1"></i>Bạn đã đánh giá quán này — form đã điền sẵn đánh giá cũ, gửi lại để cập nhật.
+                    </p>
+                </div>
+
+                <!-- Rating Scales Grid -->
+                <div class="grid grid-cols-2 gap-3 bg-palette-tofu p-3 rounded-xl border border-palette-cream">
+                    <div>
+                        <label class="block font-semibold text-palette-matcha/80 mb-1">Chất Lượng & Món Ăn</label>
+                        <div class="flex items-center gap-1 text-palette-yolk-400 text-base cursor-pointer" id="starRatingQuality">
+                            <i class="fa-solid fa-star" onclick="setRating('quality', 1)"></i>
+                            <i class="fa-solid fa-star" onclick="setRating('quality', 2)"></i>
+                            <i class="fa-solid fa-star" onclick="setRating('quality', 3)"></i>
+                            <i class="fa-solid fa-star" onclick="setRating('quality', 4)"></i>
+                            <i class="fa-solid fa-star" onclick="setRating('quality', 5)"></i>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-palette-matcha/80 mb-1">Độ Sạch Sẽ & Vệ Sinh</label>
+                        <div class="flex items-center gap-1 text-emerald-500 text-base cursor-pointer" id="starRatingHygiene">
+                            <i class="fa-solid fa-shield-halved" onclick="setRating('hygiene', 1)"></i>
+                            <i class="fa-solid fa-shield-halved" onclick="setRating('hygiene', 2)"></i>
+                            <i class="fa-solid fa-shield-halved" onclick="setRating('hygiene', 3)"></i>
+                            <i class="fa-solid fa-shield-halved" onclick="setRating('hygiene', 4)"></i>
+                            <i class="fa-solid fa-shield-halved" onclick="setRating('hygiene', 5)"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Actual Price Paid -->
+                <div>
+                    <label class="block font-semibold text-palette-matcha/80 mb-1">Giá thực tế bạn đã trả (VNĐ) *</label>
+                    <input type="number" id="reviewPrice" required placeholder="Ví dụ: 25000" min="5000" class="w-full bg-palette-tofu border border-palette-cream rounded-xl p-2.5 font-medium text-palette-matcha focus:ring-2 focus:ring-palette-ember-500 focus:outline-none">
+                </div>
+
+                <!-- Review Comment -->
+                <div>
+                    <label class="block font-semibold text-palette-matcha/80 mb-1">Nhận xét chi tiết (Khuyên dùng thử món gì? Thái độ phục vụ?)</label>
+                    <textarea id="reviewComment" rows="3" placeholder="Ví dụ: Bún trộn ở đây đầy đặn, cô chủ vui tính, ngõ hơi hẹp tý nhưng sạch sẽ..." class="w-full bg-palette-tofu border border-palette-cream rounded-xl p-2.5 font-medium text-palette-matcha focus:ring-2 focus:ring-palette-ember-500 focus:outline-none"></textarea>
+                </div>
+
+                <!-- Student Verification Badge Info -->
+                <div class="bg-palette-ember-50/60 p-3 rounded-xl border border-palette-ember-100 space-y-1">
+                    <div class="flex items-center gap-1.5 font-bold text-palette-ember-800">
+                        <i class="fa-solid fa-user-check text-palette-ember-600"></i>
+                        <span>Xác thực Badge Sinh Viên</span>
+                    </div>
+                    <p class="text-[11px] text-palette-ember-700" id="badgeNotice">Đánh giá của bạn sẽ được tự động gắn badge theo tài khoản sinh viên đã đăng nhập.</p>
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit" id="submitReviewBtn" class="w-full bg-palette-ember-600 hover:bg-palette-ember-700 text-white font-bold py-3 rounded-xl text-xs sm:text-sm shadow-md transition">
+                    Gửi Đánh Giá Ngay
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- DETAIL / REVIEWS MODAL -->
+    <div id="detailModal" class="fixed inset-0 bg-palette-matcha/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-palette-cream flex flex-col">
+            <!-- Dynamic Content Loaded by JS -->
+            <div id="detailModalContent"></div>
+        </div>
+    </div>
+
+    <!-- REPORT COMMENT MODAL -->
+    <div id="reviewReportModal" class="hidden fixed inset-0 bg-black/40 z-[60] flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-lg max-w-sm w-full p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="font-bold text-sm">Báo Cáo Bình Luận</h3>
+                <button type="button" onclick="closeReviewReportModal()" class="text-palette-matcha/50 hover:text-palette-matcha text-lg leading-none">✕</button>
+            </div>
+            <form id="reviewReportForm" class="space-y-3 text-xs">
+                <label class="flex items-center gap-2 border border-palette-cream rounded-xl p-3 cursor-pointer hover:bg-palette-tofu transition">
+                    <input type="radio" name="reviewReportReason" value="Nội dung vi phạm / Xúc phạm" class="accent-palette-ember">
+                    <span>Nội dung vi phạm / Xúc phạm</span>
+                </label>
+                <label class="flex items-center gap-2 border border-palette-cream rounded-xl p-3 cursor-pointer hover:bg-palette-tofu transition">
+                    <input type="radio" name="reviewReportReason" value="Spam / Quảng cáo" class="accent-palette-ember">
+                    <span>Spam / Quảng cáo</span>
+                </label>
+                <label class="flex items-center gap-2 border border-palette-cream rounded-xl p-3 cursor-pointer hover:bg-palette-tofu transition">
+                    <input type="radio" name="reviewReportReason" value="Thông tin sai sự thật" class="accent-palette-ember">
+                    <span>Thông tin sai sự thật</span>
+                </label>
+                <p id="reviewReportError" class="hidden text-palette-ember font-semibold"></p>
+                <button type="submit" id="reviewReportSubmitBtn" class="w-full bg-palette-ember hover:bg-palette-ember/90 text-white font-bold py-2.5 rounded-xl shadow-md transition disabled:opacity-70">Gửi Báo Cáo</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- TOAST -->
+    <div id="toast" class="hidden fixed bottom-6 left-1/2 -translate-x-1/2 bg-palette-matcha text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-lg z-[70]"></div>
+
+    <!-- FOOTER -->
+    <footer class="bg-palette-matcha text-palette-matcha/40 text-xs py-8 border-t border-palette-cream/10 mt-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4">
+            <div class="flex flex-col md:flex-row items-center justify-between gap-4">
+                <div class="flex items-center gap-2">
+                    <div class="w-7 h-7 rounded-lg bg-palette-ember-600 flex items-center justify-center p-1">
+                        <img src="assets/logo-mark.png" alt="ChùaLángEats" class="w-full h-full object-contain">
+                    </div>
+                    <span class="font-bold text-white text-sm">Chùa Láng Eats</span>
+                </div>
+                <a href="https://www.facebook.com/share/1Gpo1Cmrgr/?mibextid=wwXIfr" target="_blank" rel="noopener noreferrer"
+                   class="text-center md:text-right text-palette-matcha/40 hover:text-white underline decoration-dotted underline-offset-4 transition">
+                    Dự án sinh viên nghiên cứu Đổi mới Sáng tạo & Tư duy Thiết kế (Design Thinking) • FTU Hanoi 2026
+                </a>
+            </div>
+            <div class="border-t border-palette-cream/10 pt-4 flex flex-col sm:flex-row justify-between items-center text-[11px] text-palette-matcha/55 gap-2">
+                <p>© 2026 Chùa Láng Student Community. Cập nhật dữ liệu trực tiếp bởi sinh viên FTU, DAV, VYA.</p>
+                <div class="flex gap-4">
+                    <a href="#" class="hover:text-palette-matcha/25">Tiêu chuẩn Sạch Sẽ</a>
+                    <a href="add-spot.html" class="hover:text-palette-matcha/25">Gửi quán mới</a>
+                    <a href="#" class="hover:text-palette-matcha/25">Điều khoản sử dụng</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    </div>
+    <!-- /content wrapper -->
+
+    <!-- Leaflet JS for Map -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- MAIN JAVASCRIPT APP LOGIC CONNECTED TO SUPABASE -->
+    <script type="module">
+        import { getCurrentUser, fetchSpots, fetchReviews, createReview, fetchMyReview, reportItem } from './js/supabase.js';
+        import { openDirections } from './js/directions.js';
+
+        function goToDirections(spotId) {
+            const v = vendors.find((item) => item.id === spotId);
+            if (v) openDirections(v, currentProfile?.badge);
+        }
+        import { DISHES } from './js/dishes.js';
+
+        // STATE VARIABLES
+        let vendors = [];
+        let randomizerMeal = 'all';
+        let spinning = false;
+        let rawSpotsData = [];
+        let currentUser = null;
+        let currentProfile = null;
+        let map = null;
+        let markers = [];
+        let isMapViewOpen = false;
+        let currentRatings = { quality: 5, hygiene: 5 };
+        let editingReviewId = null; // non-null while the form holds the current user's existing review for the selected spot
+        let currentReportReviewId = null;
+
+        // INITIALIZATION
+        window.addEventListener('DOMContentLoaded', async () => {
+            await checkAuth();
+            await loadSpotsFromSupabase();
+            focusSpotFromQuery();
+
+            const vendorSearchInput = document.getElementById("reviewVendorSearch");
+            vendorSearchInput?.addEventListener("input", () => {
+                document.getElementById("reviewVendorId").value = "";
+                renderReviewVendorResults(vendorSearchInput.value);
+            });
+            vendorSearchInput?.addEventListener("focus", () => {
+                renderReviewVendorResults(vendorSearchInput.value);
+            });
+            document.addEventListener("click", (e) => {
+                if (!e.target.closest("#reviewVendorSearch") && !e.target.closest("#reviewVendorResults")) {
+                    hideReviewVendorResults();
+                }
+            });
+        });
+
+        // 1. Auth Status Check
+        async function checkAuth() {
+            try {
+                const { user, profile } = await getCurrentUser();
+                currentUser = user;
+                currentProfile = profile;
+            } catch (err) {
+                console.error("Auth check error:", err);
+            }
+        }
+
+        // 2. Fetch spots from Supabase & map to vendor structure
+        async function loadSpotsFromSupabase() {
+            const grid = document.getElementById("vendorGrid");
+            if (grid) {
+                grid.innerHTML = `
+                    <div class="col-span-full text-center py-12">
+                        <i class="fa-solid fa-spinner fa-spin text-3xl text-palette-ember-500 mb-2"></i>
+                        <p class="text-xs font-semibold text-palette-matcha/55">Đang kết nối dữ liệu Chùa Láng Eats...</p>
+                    </div>`;
+            }
+
+            const { data, error } = await fetchSpots();
+
+            if (error) {
+                console.error("Lỗi khi tải danh sách quán:", error);
+                if (grid) {
+                    grid.innerHTML = `
+                        <div class="col-span-full text-center py-12 bg-white rounded-2xl border border-palette-ember-200">
+                            <i class="fa-solid fa-triangle-exclamation text-3xl text-palette-ember-500 mb-2"></i>
+                            <p class="text-sm font-bold text-palette-matcha/80">Không thể tải dữ liệu quán ăn</p>
+                            <p class="text-xs text-palette-matcha/55 mt-1">${escapeHtml(error.message)}</p>
+                        </div>`;
+                }
+                return;
+            }
+
+            rawSpotsData = data || [];
+
+            // Standardize dataset for UI filters and cards
+            vendors = rawSpotsData.map(spot => {
+                const reviews = spot.reviews || [];
+                const reviewCount = reviews.length;
+
+                // Calculate quality rating average — null (not a fake "5.0") when
+                // there are no reviews yet, so the UI can say so honestly instead
+                // of claiming a perfect score nobody actually gave.
+                const qSum = reviews.reduce((sum, r) => sum + (r.quality_rating || 0), 0);
+                const overallRating = reviewCount > 0 ? parseFloat((qSum / reviewCount).toFixed(1)) : null;
+
+                // Calculate hygiene rating average
+                const hSum = reviews.reduce((sum, r) => sum + (r.hygiene_rating || 0), 0);
+                const hygieneScore = reviewCount > 0 ? parseFloat((hSum / reviewCount).toFixed(1)) : null;
+
+                const minP = spot.min_price || spot.minPrice || 0;
+                const maxP = spot.max_price || spot.maxPrice || 0;
+                let priceText = "15.000 - 30.000 VNĐ";
+                if (minP && maxP) {
+                    priceText = `${minP.toLocaleString('vi-VN')} - ${maxP.toLocaleString('vi-VN')} VNĐ`;
+                } else if (minP) {
+                    priceText = `Từ ${minP.toLocaleString('vi-VN')} VNĐ`;
+                }
+
+                const image = (spot.food_images && spot.food_images.length > 0) 
+                    ? spot.food_images[0] 
+                    : (spot.menu_image || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=80');
+
+                return {
+                    id: spot.id,
+                    name: spot.name || "Quán Ăn Chùa Láng",
+                    category: spot.category || "Cơm/Bún/Phở",
+                    mealType: spot.meal_type || spot.mealType || "lunch",
+                    price: minP || 20000,
+                    priceText: priceText,
+                    address: spot.address || "Chùa Láng, Đống Đa, Hà Nội",
+                    distanceMinutes: spot.distance_minutes || 5,
+                    openTime: spot.opening_time ? spot.opening_time.slice(0, 5) : null,
+                    closeTime: spot.closing_time ? spot.closing_time.slice(0, 5) : null,
+                    lat: typeof spot.lat === 'number' ? spot.lat : null,
+                    lng: typeof spot.lng === 'number' ? spot.lng : null,
+                    hygieneScore: hygieneScore,
+                    overallRating: overallRating,
+                    reviewCount: reviewCount,
+                    image: image,
+                    tags: Array.isArray(spot.tags) ? spot.tags : ["FTU Verified"],
+                    description: spot.description || "Quán ăn ngon khu vực Chùa Láng được sinh viên tin chọn.",
+                    creator: spot.profiles?.username || "Sinh viên",
+                    badge: spot.profiles?.badge || "Sinh Viên Verified"
+                };
+            });
+
+            applyFilters();
+        }
+
+        // 3. Render Vendor Grid
+        function renderVendorGrid(items) {
+            const grid = document.getElementById("vendorGrid");
+            const empty = document.getElementById("emptyState");
+            const countEl = document.getElementById("vendorCount");
+
+            if (countEl) countEl.innerText = items.length;
+
+            if (items.length === 0) {
+                if (grid) grid.innerHTML = "";
+                if (empty) empty.classList.remove("hidden");
+                return;
+            }
+
+            if (empty) empty.classList.add("hidden");
+            if (grid) {
+                grid.innerHTML = items.map(vendor => `
+                    <div class="vendor-card bg-white rounded-2xl overflow-hidden border border-palette-cream shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
+                        <div>
+                            <!-- Card Image Header -->
+                            <div class="relative h-44 w-full bg-palette-tofu overflow-hidden">
+                                <img src="${vendor.image}" alt="${escapeHtml(vendor.name)}" class="w-full h-full object-cover" onerror="this.src='https://placehold.co/600x400/fff1f2/be123c?text=Chua+Lang+Food'">
+                                
+                                <!-- Price Badge -->
+                                <div class="absolute top-3 left-3 bg-palette-matcha/80 backdrop-blur-md text-white text-[11px] font-bold px-2.5 py-1 rounded-lg">
+                                    <i class="fa-solid fa-tag text-palette-ember-400 mr-1"></i>${escapeHtml(vendor.priceText)}
+                                </div>
+
+                                <!-- Distance Badge -->
+                                <div class="absolute top-3 right-3 bg-white/90 backdrop-blur-md text-palette-matcha text-[11px] font-bold px-2 py-1 rounded-lg flex items-center gap-1 shadow-sm">
+                                    <i class="fa-solid fa-person-walking text-palette-ember-600"></i>${vendor.distanceMinutes} phút đi bộ
+                                </div>
+
+                                <!-- Hygiene Shield Badge -->
+                                ${vendor.hygieneScore !== null ? `
+                                <div class="absolute bottom-3 left-3 bg-emerald-600/90 text-white text-[10px] font-bold px-2 py-0.5 rounded-md flex items-center gap-1 backdrop-blur-sm">
+                                    <i class="fa-solid fa-shield-halved"></i>Sạch Sẽ: ${vendor.hygieneScore}/5.0
+                                </div>` : `
+                                <div class="absolute bottom-3 left-3 bg-palette-matcha/70 text-white text-[10px] font-bold px-2 py-0.5 rounded-md flex items-center gap-1 backdrop-blur-sm">
+                                    <i class="fa-solid fa-sparkles"></i>Mới thêm
+                                </div>`}
+                            </div>
+
+                            <!-- Card Body -->
+                            <div class="p-4 space-y-2">
+                                <div class="flex items-start justify-between gap-2">
+                                    <h3 class="font-bold text-palette-matcha text-sm leading-snug hover:text-palette-ember-600 cursor-pointer" onclick="openDetailModal(${vendor.id})">${escapeHtml(vendor.name)}</h3>
+                                    ${vendor.overallRating !== null ? `
+                                    <div class="flex items-center text-palette-yolk-500 font-bold text-xs shrink-0">
+                                        <i class="fa-solid fa-star text-xs mr-0.5"></i>${vendor.overallRating}
+                                        <span class="text-palette-matcha/40 font-normal text-[10px] ml-0.5">(${vendor.reviewCount})</span>
+                                    </div>` : `
+                                    <span class="text-palette-matcha/40 font-semibold text-[10px] shrink-0">Chưa có đánh giá</span>`}
+                                </div>
+
+                                <p class="text-[11px] text-palette-matcha/55 flex items-center gap-1 truncate">
+                                    <i class="fa-solid fa-location-dot text-palette-ember-500 text-xs shrink-0"></i>${escapeHtml(vendor.address)}
+                                </p>
+                                ${vendor.openTime || vendor.closeTime ? `
+                                <p class="text-[11px] text-palette-matcha/55 flex items-center gap-1">
+                                    <i class="fa-solid fa-clock text-palette-ember-500 text-xs shrink-0"></i>${escapeHtml(vendor.openTime || "?")} - ${escapeHtml(vendor.closeTime || "?")}
+                                </p>` : ""}
+
+                                <p class="text-xs text-palette-matcha/70 line-clamp-2 leading-relaxed pt-1">
+                                    ${escapeHtml(vendor.description)}
+                                </p>
+
+                                <!-- Tags -->
+                                <div class="flex flex-wrap gap-1 pt-2">
+                                    ${vendor.tags.map(tag => `<span class="bg-palette-tofu text-palette-matcha/70 text-[10px] font-semibold px-2 py-0.5 rounded-md">${escapeHtml(tag)}</span>`).join('')}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Card Footer Actions -->
+                        <div class="px-4 py-3 bg-palette-tofu/80 border-t border-palette-cream flex items-center justify-between text-xs mt-2">
+                            <span class="text-[11px] font-medium text-palette-matcha/55">${escapeHtml(vendor.category)}</span>
+                            <button onclick="openDetailModal(${vendor.id})" class="font-bold text-palette-ember-600 hover:text-palette-ember-700 flex items-center gap-1 text-xs">
+                                Chi tiết & Đánh giá <i class="fa-solid fa-chevron-right text-[10px]"></i>
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+
+        // 4. Filter and Sorting Logic
+        function applyFilters() {
+            const query = (document.getElementById("searchInput")?.value || "").toLowerCase().trim();
+            const maxPrice = document.getElementById("priceFilter")?.value || "all";
+            const maxDistance = document.getElementById("distanceFilter")?.value || "all";
+            const minHygiene = document.getElementById("hygieneFilter")?.value || "all";
+            const mealType = document.getElementById("mealFilter")?.value || "all";
+            const sortBy = document.getElementById("sortBy")?.value || "rating";
+
+            let filtered = vendors.filter(v => {
+                const matchQuery = v.name.toLowerCase().includes(query) || 
+                                   v.address.toLowerCase().includes(query) || 
+                                   v.description.toLowerCase().includes(query) ||
+                                   v.tags.some(t => t.toLowerCase().includes(query));
+
+                const matchPrice = maxPrice === "all" || v.price <= parseInt(maxPrice) * 1000;
+                const matchDistance = maxDistance === "all" || v.distanceMinutes <= parseInt(maxDistance);
+                const matchHygiene = minHygiene === "all" || v.hygieneScore >= parseFloat(minHygiene);
+                const matchMeal = mealType === "all" || v.mealType === mealType;
+
+                return matchQuery && matchPrice && matchDistance && matchHygiene && matchMeal;
+            });
+
+            if (sortBy === "rating") {
+                filtered.sort((a, b) => b.overallRating - a.overallRating);
+            } else if (sortBy === "priceAsc") {
+                filtered.sort((a, b) => a.price - b.price);
+            } else if (sortBy === "hygiene") {
+                filtered.sort((a, b) => b.hygieneScore - a.hygieneScore);
+            } else if (sortBy === "distance") {
+                filtered.sort((a, b) => a.distanceMinutes - b.distanceMinutes);
+            }
+
+            renderVendorGrid(filtered);
+
+            if (isMapViewOpen && map) {
+                updateMapMarkers(filtered);
+            }
+        }
+
+        // "HÔM NAY ĂN GÌ?" RANDOMIZER — CS:GO-style case-opening reel.
+        //
+        // spinRandomizer() builds a long strip of dish cards (the real pick
+        // planted at CASE_WIN_INDEX, the rest decoys from the same pool),
+        // animates the strip past a fixed center pointer with a fast-start /
+        // slow-end easing, and reveals the result panel — plus a live check
+        // of whether any vendor already on the site serves it — once the
+        // strip settles.
+
+        const MEAL_LABELS = { breakfast: "Ăn sáng", lunch: "Ăn trưa", dinner: "Ăn tối", snack: "Ăn vặt" };
+        const CASE_CARD_W = 92;    // px — keep in sync with the width set in buildCaseCardHtml()
+        const CASE_CARD_GAP = 8;   // px — keep in sync with #caseTrack's gap-2
+        const CASE_STEP = CASE_CARD_W + CASE_CARD_GAP;
+        const CASE_REEL_LENGTH = 40;
+        const CASE_WIN_INDEX = 33; // land near the end so there's a long run-up
+
+        function setRandomizerMeal(meal) {
+            randomizerMeal = meal;
+            document.querySelectorAll('#randomizerMealChips .randomizer-chip').forEach(btn => {
+                const active = btn.dataset.meal === meal;
+                btn.className = 'randomizer-chip text-[11px] font-bold px-3 py-1.5 rounded-full transition ' +
+                    (active ? 'bg-white text-palette-ember-600' : 'bg-white/15 hover:bg-white/25 text-white');
+            });
+        }
+
+        function dishPool() {
+            const pool = randomizerMeal === 'all'
+                ? DISHES
+                : DISHES.filter(d => d.mealTypes.includes(randomizerMeal));
+            // Fall back to the full list rather than coming up empty if a
+            // meal-time filter somehow matches nothing.
+            return pool.length > 0 ? pool : DISHES;
+        }
+
+        function buildCaseCardHtml(dish) {
+            return `
+                <div class="case-card shrink-0" style="width:${CASE_CARD_W}px">
+                    <div class="case-card-img h-16 sm:h-20 w-full rounded-lg overflow-hidden bg-palette-tofu border-2 border-white/30">
+                        <img src="${dish.image}" alt="" class="w-full h-full object-cover" onerror="this.src='https://placehold.co/200x200/fff1f2/be123c?text=Mon+An'">
+                    </div>
+                    <div class="text-[9px] sm:text-[10px] text-white font-semibold text-center mt-1 leading-tight truncate px-0.5">${escapeHtml(dish.name)}</div>
+                </div>`;
+        }
+
+        function spinRandomizer() {
+            if (spinning) return;
+            const track = document.getElementById("caseTrack");
+            const viewport = document.getElementById("caseViewport");
+            if (!track || !viewport) return;
+
+            const pool = dishPool();
+            const finalDish = pool[Math.floor(Math.random() * pool.length)];
+
+            spinning = true;
+            const spinBtn = document.getElementById("spinBtn");
+            const hint = document.getElementById("randomizerIdleHint");
+            if (spinBtn) spinBtn.disabled = true;
+            if (hint) hint.textContent = "Đang mở hộp...";
+            document.getElementById("randomizerResultPanel")?.classList.add("hidden");
+
+            // Build the reel: random decoys with the real pick planted at CASE_WIN_INDEX.
+            let html = "";
+            for (let i = 0; i < CASE_REEL_LENGTH; i++) {
+                const d = (i === CASE_WIN_INDEX) ? finalDish : pool[Math.floor(Math.random() * pool.length)];
+                html += buildCaseCardHtml(d);
+            }
+            track.innerHTML = html;
+            track.style.transition = "none";
+            track.style.transform = "translateX(0px)";
+            void track.offsetWidth; // force reflow so the instant reset above lands before animating
+
+            const viewportW = viewport.clientWidth;
+            const jitter = (Math.random() - 0.5) * (CASE_CARD_W * 0.6);
+            const targetX = -(CASE_WIN_INDEX * CASE_STEP + CASE_CARD_W / 2 - viewportW / 2) + jitter;
+
+            requestAnimationFrame(() => {
+                track.style.transition = "transform 4.2s cubic-bezier(0.1, 0.72, 0.1, 1)";
+                track.style.transform = `translateX(${targetX}px)`;
+            });
+
+            track.addEventListener("transitionend", function onEnd() {
+                track.removeEventListener("transitionend", onEnd);
+                spinning = false;
+                if (spinBtn) spinBtn.disabled = false;
+                if (hint) hint.textContent = 'Nhấn "Mở hộp!" để quay lại';
+                const cards = track.querySelectorAll(".case-card");
+                if (cards[CASE_WIN_INDEX]) cards[CASE_WIN_INDEX].classList.add("case-card-win");
+                showResultPanel(finalDish);
+            }, { once: true });
+        }
+
+        function matchingVendorsFor(dish) {
+            if (!Array.isArray(vendors) || vendors.length === 0) return [];
+            const kws = dish.keywords.map(k => k.toLowerCase());
+            return vendors.filter(v => kws.some(k =>
+                v.name.toLowerCase().includes(k) ||
+                v.description.toLowerCase().includes(k) ||
+                v.tags.some(t => t.toLowerCase().includes(k))
+            ));
+        }
+
+        function showResultPanel(dish) {
+            const panel = document.getElementById("randomizerResultPanel");
+            const img = document.getElementById("randomizerImg");
+            const mealBadge = document.getElementById("randomizerMealBadge");
+            const nameEl = document.getElementById("randomizerName");
+            const descEl = document.getElementById("randomizerDesc");
+            const priceEl = document.getElementById("randomizerPrice");
+            const ctaEl = document.getElementById("randomizerCta");
+
+            if (img) { img.src = dish.image; img.alt = dish.name; }
+            if (mealBadge) mealBadge.textContent = dish.mealTypes.map(m => MEAL_LABELS[m] || m).join(" · ");
+            if (nameEl) nameEl.textContent = dish.name;
+            if (descEl) descEl.textContent = dish.description;
+            if (priceEl) priceEl.innerHTML = `<i class="fa-solid fa-tag"></i> ${escapeHtml(dish.priceText)}`;
+
+            const matches = matchingVendorsFor(dish);
+            if (ctaEl) {
+                if (matches.length > 0) {
+                    ctaEl.innerHTML = `
+                        <button onclick="jumpToVendorsFor('${dish.id}')" class="w-full text-center bg-white text-palette-ember-600 hover:bg-palette-cream font-bold text-[11px] px-3 py-2 rounded-lg transition">
+                            <i class="fa-solid fa-location-dot mr-1"></i>${matches.length} quán gần đây
+                        </button>`;
+                } else {
+                    ctaEl.innerHTML = `
+                        <a href="add-spot.html" class="block w-full text-center bg-white/15 hover:bg-white/25 text-white font-bold text-[11px] px-3 py-2 rounded-lg transition">
+                            <i class="fa-solid fa-plus mr-1"></i>Thêm quán đầu tiên!
+                        </a>`;
+                }
+            }
+            if (panel) panel.classList.remove("hidden");
+        }
+
+        function jumpToVendorsFor(dishId) {
+            const dish = DISHES.find(d => d.id === dishId);
+            if (!dish) return;
+
+            // Render the exact vendors matchingVendorsFor() already counted for
+            // the CTA button, rather than re-running the free-text search box
+            // with a single fixed keyword (keywords[0]). Those two could
+            // disagree — e.g. a dish matches a vendor only via one of its
+            // *other* keywords ("ốc" inside "Huyền Ốc Hải Phòng"), while
+            // keywords[0] ("ốc luộc") never appears there as an exact phrase,
+            // so the free-text search came up empty even though the button
+            // correctly said "1 quán gần đây".
+            const matches = matchingVendorsFor(dish);
+
+            const searchInput = document.getElementById("searchInput");
+            if (searchInput) searchInput.value = "";
+            ["priceFilter", "distanceFilter", "hygieneFilter", "mealFilter"].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.value = "all";
+            });
+
+            renderVendorGrid(matches);
+            document.getElementById("vendorGrid")?.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+
+        function resetFilters() {
+            if (document.getElementById("searchInput")) document.getElementById("searchInput").value = "";
+            if (document.getElementById("priceFilter")) document.getElementById("priceFilter").value = "all";
+            if (document.getElementById("distanceFilter")) document.getElementById("distanceFilter").value = "all";
+            if (document.getElementById("hygieneFilter")) document.getElementById("hygieneFilter").value = "all";
+            if (document.getElementById("mealFilter")) document.getElementById("mealFilter").value = "all";
+            if (document.getElementById("sortBy")) document.getElementById("sortBy").value = "rating";
+            applyFilters();
+        }
+
+        // 5. Map Toggle & Leaflet Integration
+        function toggleMapView() {
+            const mapContainer = document.getElementById("mapContainer");
+            const btnText = document.getElementById("mapToggleText");
+            isMapViewOpen = !isMapViewOpen;
+
+            if (isMapViewOpen) {
+                if (mapContainer) mapContainer.classList.remove("hidden");
+                if (btnText) btnText.innerText = "Ẩn Bản Đồ";
+                
+                if (!map) {
+                    initMap();
+                } else {
+                    setTimeout(() => map.invalidateSize(), 200);
+                }
+            } else {
+                if (mapContainer) mapContainer.classList.add("hidden");
+                if (btnText) btnText.innerText = "Xem Bản Đồ";
+            }
+        }
+
+        function initMap() {
+            map = L.map('map').setView([21.0222, 105.8028], 16);
+
+            // Using Esri's free, keyless World Street Map raster tiles instead of
+            // tile.openstreetmap.org directly: OSM's donation-funded tile servers
+            // have been heavily rate-limiting and regionally throttling traffic
+            // throughout 2026 (including specifically slower access from South
+            // East Asia), with no guaranteed SLA for third-party sites — fixing
+            // the deprecated {s} subdomain wasn't enough because that was never
+            // the only problem. Esri's URL order is {z}/{y}/{x} (y before x) —
+            // different from OSM's {z}/{x}/{y}, so don't swap this back without
+            // also swapping the order.
+            L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+                maxZoom: 19,
+                attribution: 'Tiles &copy; Esri &mdash; Source: Esri, HERE, Garmin, USGS, Intermap, INCREMENT P, NRCAN, Esri Japan, METI, Esri China (Hong Kong), NOSTRA, &copy; OpenStreetMap contributors, and the GIS User Community'
+            }).addTo(map);
+
+            updateMapMarkers(vendors);
+
+            // The container was hidden (display:none via the "hidden" class) until
+            // just before this function ran, so Leaflet may have measured it before
+            // the browser finished reflowing. Re-measure once that settles.
+            setTimeout(() => map.invalidateSize(), 150);
+        }
+
+        function updateMapMarkers(items) {
+            if (!map) return;
+            markers.forEach(m => map.removeLayer(m));
+            markers = [];
+
+            items.forEach(v => {
+                // Spots added before the lat/lng migration (or missing a pin for
+                // any other reason) have no real coordinates — skip rather than
+                // guess, so the map never shows a pin at the wrong address.
+                if (v.lat == null || v.lng == null) return;
+
+                const marker = L.marker([v.lat, v.lng]).addTo(map);
+                marker._chualangSpotId = v.id;
+                marker.bindPopup(`
+                    <div class="text-xs p-1 font-sans">
+                        <strong class="text-palette-ember-600 block text-sm">${escapeHtml(v.name)}</strong>
+                        <div class="text-palette-matcha/70 font-bold">${escapeHtml(v.priceText)}</div>
+                        <div class="text-palette-matcha/55 mt-1">${escapeHtml(v.address)}</div>
+                        <div class="flex gap-1 mt-2">
+                            <button onclick="openDetailModal(${v.id})" class="flex-1 bg-palette-ember-600 text-white font-bold px-2 py-1 rounded text-[10px]">Xem đánh giá</button>
+                            <button onclick="goToDirections(${v.id})" class="flex-1 bg-palette-matcha text-white font-bold px-2 py-1 rounded text-[10px]"><i class="fa-solid fa-diamond-turn-right"></i> Chỉ Đường</button>
+                        </div>
+                    </div>
+                `);
+                markers.push(marker);
+            });
+        }
+
+        // 5b. Deep-link support: feed.html's "Xem trên Bản Đồ" button sends
+        // visitors to index.html?spotId=<id> — open the map, center on that
+        // spot's pin, and pop its popup open.
+        function focusSpotFromQuery() {
+            const spotId = new URLSearchParams(window.location.search).get("spotId");
+            if (!spotId) return;
+
+            const id = parseInt(spotId, 10);
+            const vendor = vendors.find((v) => v.id === id);
+            if (!vendor) return;
+
+            if (!isMapViewOpen) toggleMapView();
+
+            setTimeout(() => {
+                if (!map) return;
+                map.invalidateSize();
+
+                if (vendor.lat == null || vendor.lng == null) {
+                    // No pin to show yet — at least open the full detail view.
+                    openDetailModal(id);
+                    return;
+                }
+
+                map.setView([vendor.lat, vendor.lng], 18);
+                const marker = markers.find((m) => m._chualangSpotId === id);
+                marker?.openPopup();
+                document.getElementById("mapContainer")?.scrollIntoView({ behavior: "smooth", block: "start" });
+            }, 250);
+        }
+
+        // 6. Modal Controls & Review Submission
+
+        // --- Searchable vendor combobox (client-side filter over `vendors`,
+        //     which is already loaded in memory — no extra fetch needed) ---
+        function hideReviewVendorResults() {
+            document.getElementById("reviewVendorResults")?.classList.add("hidden");
+            document.getElementById("reviewVendorEmpty")?.classList.add("hidden");
+        }
+
+        function selectReviewVendor(vendor) {
+            const idInput = document.getElementById("reviewVendorId");
+            const searchInput = document.getElementById("reviewVendorSearch");
+            if (idInput) idInput.value = vendor.id;
+            if (searchInput) searchInput.value = `${vendor.name} (${vendor.priceText})`;
+            hideReviewVendorResults();
+            syncExistingReview(vendor.id);
+        }
+
+        // Each user can only hold one review per spot (enforced in Postgres by
+        // a UNIQUE(spot_id, user_id) constraint, and createReview() upserts on
+        // that same pair). This resets the form to blank defaults, then — if
+        // the signed-in user already has a review for the selected vendor —
+        // pre-fills it and switches the form into "update" mode so a second
+        // submission edits that review instead of silently failing against
+        // the constraint.
+        async function syncExistingReview(vendorId) {
+            editingReviewId = null;
+            const notice = document.getElementById("reviewExistingNotice");
+            const submitBtn = document.getElementById("submitReviewBtn");
+            notice?.classList.add("hidden");
+            setRating("quality", 5);
+            setRating("hygiene", 5);
+            const priceEl = document.getElementById("reviewPrice");
+            const commentEl = document.getElementById("reviewComment");
+            if (priceEl) priceEl.value = "";
+            if (commentEl) commentEl.value = "";
+            if (submitBtn) submitBtn.innerText = "Gửi Đánh Giá Ngay";
+
+            if (!vendorId || !currentUser) return;
+
+            const { data: mine } = await fetchMyReview(vendorId, currentUser.id);
+            if (!mine) return;
+
+            editingReviewId = mine.id;
+            setRating("quality", Math.round(Number(mine.quality_rating) || 5));
+            setRating("hygiene", Math.round(Number(mine.hygiene_rating) || 5));
+            if (priceEl) priceEl.value = mine.price_paid ?? "";
+            if (commentEl) commentEl.value = mine.comment || "";
+            if (submitBtn) submitBtn.innerText = "Cập Nhật Đánh Giá";
+            notice?.classList.remove("hidden");
+        }
+
+        function renderReviewVendorResults(rawQuery) {
+            const resultsBox = document.getElementById("reviewVendorResults");
+            const emptyMsg = document.getElementById("reviewVendorEmpty");
+            if (!resultsBox) return;
+
+            const query = rawQuery.toLowerCase().trim();
+            const matches = query
+                ? vendors.filter(v => v.name.toLowerCase().includes(query) || v.address.toLowerCase().includes(query))
+                : vendors;
+
+            if (matches.length === 0) {
+                resultsBox.classList.add("hidden");
+                resultsBox.innerHTML = "";
+                emptyMsg?.classList.remove("hidden");
+                return;
+            }
+
+            emptyMsg?.classList.add("hidden");
+            resultsBox.innerHTML = matches.slice(0, 30).map(v => `
+                <button type="button" data-vendor-id="${v.id}" class="review-vendor-option w-full text-left px-3 py-2 hover:bg-palette-tofu border-b border-palette-cream/60 last:border-b-0">
+                    <span class="block font-semibold text-palette-matcha">${escapeHtml(v.name)}</span>
+                    <span class="block text-[11px] text-palette-matcha/50 truncate">${escapeHtml(v.address)} · ${escapeHtml(v.priceText)}</span>
+                </button>
+            `).join("");
+            resultsBox.classList.remove("hidden");
+
+            resultsBox.querySelectorAll(".review-vendor-option").forEach(btn => {
+                btn.addEventListener("click", () => {
+                    const vendor = vendors.find(v => v.id === parseInt(btn.dataset.vendorId));
+                    if (vendor) selectReviewVendor(vendor);
+                });
+            });
+        }
+
+        function openReviewModal(vendorId) {
+            if (!currentUser) {
+                if (confirm("Bạn cần đăng nhập để viết đánh giá. Đến trang đăng nhập ngay?")) {
+                    window.location.href = "login.html";
+                }
+                return;
+            }
+
+            document.getElementById("reviewVendorId").value = "";
+            document.getElementById("reviewVendorSearch").value = "";
+            hideReviewVendorResults();
+
+            if (vendorId) {
+                const vendor = vendors.find(v => v.id === vendorId);
+                if (vendor) selectReviewVendor(vendor); // selectReviewVendor() calls syncExistingReview() itself
+            } else {
+                syncExistingReview(null); // no vendor chosen yet — just reset the form to blank defaults
+            }
+
+            const badgeNotice = document.getElementById("badgeNotice");
+            if (badgeNotice) {
+                const badge = currentProfile?.badge || "Sinh Viên Verified";
+                badgeNotice.innerHTML = `Tài khoản: <strong>${escapeHtml(currentProfile?.username || '')}</strong> (Badge: <span class="text-palette-ember-600 font-bold">${escapeHtml(badge)}</span>)`;
+            }
+
+            document.getElementById("reviewModal")?.classList.remove("hidden");
+        }
+
+        function closeReviewModal() {
+            document.getElementById("reviewModal")?.classList.add("hidden");
+            hideReviewVendorResults();
+        }
+
+        function setRating(type, val) {
+            currentRatings[type] = val;
+            const containerId = type === 'quality' ? 'starRatingQuality' : 'starRatingHygiene';
+            const iconClass = type === 'quality' ? 'fa-star' : 'fa-shield-halved';
+            const container = document.getElementById(containerId);
+            if (!container) return;
+
+            const stars = container.querySelectorAll("i");
+            stars.forEach((star, index) => {
+                if (index < val) {
+                    star.className = `fa-solid ${iconClass}`;
+                } else {
+                    star.className = `fa-regular ${iconClass} text-palette-matcha/25`;
+                }
+            });
+        }
+
+        async function handleReviewSubmit(e) {
+            e.preventDefault();
+            if (!currentUser) {
+                alert("Bạn cần đăng nhập để gửi đánh giá.");
+                window.location.href = "login.html";
+                return;
+            }
+
+            const vendorId = parseInt(document.getElementById("reviewVendorId").value);
+            const pricePaid = document.getElementById("reviewPrice").value;
+            const comment = document.getElementById("reviewComment").value;
+            const submitBtn = document.getElementById("submitReviewBtn");
+
+            if (!vendorId || !pricePaid) {
+                alert("Vui lòng chọn một quán ăn từ danh sách gợi ý và điền đầy đủ các thông tin bắt buộc.");
+                return;
+            }
+
+            const wasUpdate = !!editingReviewId;
+            const previousLabel = submitBtn ? submitBtn.innerText : "Gửi Đánh Giá Ngay";
+
+            try {
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.innerText = "Đang gửi...";
+                }
+
+                const { data, error } = await createReview({
+                    spot_id: vendorId,
+                    quality_rating: currentRatings.quality,
+                    hygiene_rating: currentRatings.hygiene,
+                    price_paid: parseFloat(pricePaid),
+                    comment: comment || "Quán ngon, chuẩn tiêu chuẩn sinh viên Chùa Láng!"
+                });
+
+                if (error) {
+                    alert("Không thể gửi đánh giá: " + error.message);
+                    return;
+                }
+
+                alert(wasUpdate ? "Đã cập nhật đánh giá của bạn!" : "Cảm ơn bạn! Đánh giá đã được gửi thành công lên hệ thống Supabase.");
+                editingReviewId = null;
+                closeReviewModal();
+                
+                // Clear form inputs
+                document.getElementById("reviewVendorSearch").value = "";
+                document.getElementById("reviewVendorId").value = "";
+                document.getElementById("reviewPrice").value = "";
+                document.getElementById("reviewComment").value = "";
+                
+                // Reload list to update ratings
+                await loadSpotsFromSupabase();
+
+            } catch (err) {
+                alert("Đã xảy ra lỗi: " + err.message);
+            } finally {
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerText = previousLabel;
+                }
+            }
+        }
+
+        // 7. Detail & Reviews Modal Logic
+        async function openDetailModal(vendorId) {
+            const v = vendors.find(item => item.id === vendorId);
+            if (!v) return;
+
+            const modalContent = document.getElementById("detailModalContent");
+            if (!modalContent) return;
+
+            // Show loading placeholder
+            modalContent.innerHTML = `
+                <div class="p-8 text-center">
+                    <i class="fa-solid fa-spinner fa-spin text-2xl text-palette-ember-500 mb-2"></i>
+                    <p class="text-xs text-palette-matcha/55">Đang tải đánh giá từ Supabase...</p>
+                </div>`;
+            
+            document.getElementById("detailModal")?.classList.remove("hidden");
+
+            // Fetch live detailed reviews for this spot from Supabase
+            const { data: reviewsData, error } = await fetchReviews(vendorId);
+            const liveReviews = (reviewsData || []).map(r => ({
+                id: r.id,
+                user: r.profiles?.username || "Sinh viên ẩn danh",
+                badge: r.profiles?.badge || "Sinh Viên Verified",
+                rating: r.quality_rating || 5,
+                hygiene: r.hygiene_rating || 5,
+                comment: r.comment || "Đáng để thử!",
+                pricePaid: r.price_paid ? `${Number(r.price_paid).toLocaleString('vi-VN')} VNĐ` : "Chuẩn SV"
+            }));
+
+            modalContent.innerHTML = `
+                <!-- Modal Header Image -->
+                <div class="relative h-56 sm:h-64 w-full bg-palette-matcha">
+                    <img src="${v.image}" class="w-full h-full object-cover opacity-90" onerror="this.src='https://placehold.co/600x400/fff1f2/be123c?text=Chua+Lang+Food'">
+                    <button onclick="closeDetailModal()" class="absolute top-4 right-4 bg-palette-matcha/60 hover:bg-palette-matcha text-white w-9 h-9 rounded-full flex items-center justify-center text-sm backdrop-blur-sm transition">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                    <div class="absolute bottom-4 left-4 right-4 text-white">
+                        <span class="bg-palette-ember-600 text-[10px] font-bold px-2 py-0.5 rounded-md">${escapeHtml(v.category)}</span>
+                        <h2 class="text-xl sm:text-2xl font-black mt-1 leading-tight">${escapeHtml(v.name)}</h2>
+                        <p class="text-xs text-palette-cream flex items-center gap-1 mt-0.5">
+                            <i class="fa-solid fa-location-dot text-palette-ember-400"></i>${escapeHtml(v.address)}
+                        </p>
+                        ${v.openTime || v.closeTime ? `
+                        <p class="text-xs text-palette-cream flex items-center gap-1 mt-0.5">
+                            <i class="fa-solid fa-clock text-palette-ember-400"></i>${escapeHtml(v.openTime || "?")} - ${escapeHtml(v.closeTime || "?")}
+                        </p>` : ""}
+                    </div>
+                </div>
+
+                <!-- Modal Body -->
+                <div class="p-5 space-y-5 text-xs">
+                    <!-- Key Metric Badges -->
+                    <div class="grid grid-cols-3 gap-2 bg-palette-tofu p-3 rounded-xl border border-palette-cream text-center">
+                        <div>
+                            <div class="text-palette-matcha/40 font-semibold text-[10px]">Mức Giá Khảo Sát</div>
+                            <div class="font-bold text-palette-ember-600 text-xs sm:text-sm mt-0.5">${escapeHtml(v.priceText)}</div>
+                        </div>
+                        <div class="border-x border-palette-cream">
+                            <div class="text-palette-matcha/40 font-semibold text-[10px]">Điểm Vệ Sinh</div>
+                            <div class="font-bold ${v.hygieneScore !== null ? 'text-emerald-600' : 'text-palette-matcha/40'} text-xs sm:text-sm mt-0.5 flex items-center justify-center gap-1">
+                                ${v.hygieneScore !== null ? `<i class="fa-solid fa-shield-halved"></i>${v.hygieneScore}/5.0` : 'Chưa có'}
+                            </div>
+                        </div>
+                        <div>
+                            <div class="text-palette-matcha/40 font-semibold text-[10px]">Khoảng Cách</div>
+                            <div class="font-bold text-palette-matcha text-xs sm:text-sm mt-0.5 flex items-center justify-center gap-1">
+                                <i class="fa-solid fa-person-walking text-palette-ember-500"></i>${v.distanceMinutes} phút
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Description -->
+                    <div>
+                        <h4 class="font-bold text-palette-matcha text-sm mb-1">Mô tả & Đặc trưng</h4>
+                        <p class="text-palette-matcha/70 leading-relaxed">${escapeHtml(v.description)}</p>
+                    </div>
+
+                    <!-- Reviews Section -->
+                    <div class="space-y-3 pt-2">
+                        <div class="flex items-center justify-between border-b border-palette-cream pb-2">
+                            <h4 class="font-bold text-palette-matcha text-sm">Đánh giá từ Sinh Viên (${liveReviews.length})</h4>
+                            <button onclick="closeDetailModal(); openReviewModal(${v.id})" class="text-palette-ember-600 font-bold hover:underline">
+                                + Viết nhận xét
+                            </button>
+                        </div>
+
+                        <div class="space-y-3 max-h-60 overflow-y-auto custom-scrollbar pr-1">
+                            ${liveReviews.length === 0 ? `
+                                <p class="text-center text-palette-matcha/40 py-6">Chưa có nhận xét nào. Hãy là người đầu tiên đánh giá quán này!</p>
+                            ` : liveReviews.map(r => `
+                                <div class="bg-palette-tofu p-3 rounded-xl border border-palette-cream space-y-1">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center gap-1.5">
+                                            <span class="font-bold text-palette-matcha">${escapeHtml(r.user)}</span>
+                                            <span class="bg-palette-ember-100 text-palette-ember-800 text-[9px] font-bold px-1.5 py-0.5 rounded">${escapeHtml(r.badge)}</span>
+                                        </div>
+                                        <span class="text-palette-yolk-500 font-bold">${r.rating} ★</span>
+                                    </div>
+                                    <p class="text-palette-matcha/70">${escapeHtml(r.comment)}</p>
+                                    <div class="text-[10px] text-palette-matcha/40 flex items-center justify-between gap-2 pt-1">
+                                        <div class="flex items-center gap-2">
+                                            <span>Giá thực tế: <strong class="text-palette-matcha/70">${escapeHtml(r.pricePaid)}</strong></span>
+                                            <span>•</span>
+                                            <span>Sạch sẽ: <strong class="text-emerald-600">${r.hygiene}/5 ★</strong></span>
+                                        </div>
+                                        <button type="button" class="review-report-btn shrink-0 font-semibold text-palette-yolk hover:underline" data-review-id="${r.id}">Báo cáo</button>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modal Footer -->
+                <div class="p-4 bg-palette-tofu border-t border-palette-cream flex justify-end gap-2">
+                    <button onclick="goToDirections(${v.id})" class="bg-palette-ember-600 hover:bg-palette-ember-700 text-white font-bold px-4 py-2 rounded-xl flex items-center gap-2">
+                        <i class="fa-solid fa-diamond-turn-right"></i> Dẫn Tôi Tới Đây
+                    </button>
+                    <button onclick="closeDetailModal()" class="bg-palette-cream hover:bg-palette-cream text-palette-matcha font-bold px-4 py-2 rounded-xl">
+                        Đóng
+                    </button>
+                </div>
+            `;
+
+            modalContent.querySelectorAll(".review-report-btn").forEach((btn) => {
+                btn.addEventListener("click", () => openReviewReportModal(btn.dataset.reviewId));
+            });
+        }
+
+        function closeDetailModal() {
+            document.getElementById("detailModal")?.classList.add("hidden");
+        }
+
+        // 8. Report-a-comment modal
+        function openReviewReportModal(reviewId) {
+            if (!currentUser) {
+                window.location.href = "login.html";
+                return;
+            }
+            currentReportReviewId = reviewId;
+            document.querySelectorAll('input[name="reviewReportReason"]').forEach((r) => (r.checked = false));
+            document.getElementById("reviewReportError")?.classList.add("hidden");
+            document.getElementById("reviewReportModal")?.classList.remove("hidden");
+        }
+
+        function closeReviewReportModal() {
+            document.getElementById("reviewReportModal")?.classList.add("hidden");
+            currentReportReviewId = null;
+        }
+
+        document.getElementById("reviewReportForm")?.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const selected = document.querySelector('input[name="reviewReportReason"]:checked');
+            const reportError = document.getElementById("reviewReportError");
+
+            if (!selected) {
+                if (reportError) {
+                    reportError.textContent = "Vui lòng chọn một lý do.";
+                    reportError.classList.remove("hidden");
+                }
+                return;
+            }
+
+            const submitBtn = document.getElementById("reviewReportSubmitBtn");
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.textContent = "Đang gửi...";
+            }
+
+            try {
+                const { error } = await reportItem("review", currentReportReviewId, selected.value);
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = "Gửi Báo Cáo";
+                }
+                if (error) {
+                    if (reportError) {
+                        reportError.textContent = "Không thể gửi báo cáo: " + error.message;
+                        reportError.classList.remove("hidden");
+                    }
+                    return;
+                }
+                closeReviewReportModal();
+                showToast("Đã gửi báo cáo bình luận. Cảm ơn bạn!");
+            } catch (err) {
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = "Gửi Báo Cáo";
+                }
+                if (reportError) {
+                    reportError.textContent = "Không thể gửi báo cáo: " + err.message;
+                    reportError.classList.remove("hidden");
+                }
+            }
+        });
+
+        function showToast(message) {
+            const toast = document.getElementById("toast");
+            if (!toast) return;
+            toast.textContent = message;
+            toast.classList.remove("hidden");
+            setTimeout(() => toast.classList.add("hidden"), 2500);
+        }
+
+        function escapeHtml(str) {
+            if (str == null) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        // Attach functions to window for inline HTML handlers
+        window.applyFilters = applyFilters;
+        window.setRandomizerMeal = setRandomizerMeal;
+        window.spinRandomizer = spinRandomizer;
+        window.jumpToVendorsFor = jumpToVendorsFor;
+        window.resetFilters = resetFilters;
+        window.toggleMapView = toggleMapView;
+        window.openReviewModal = openReviewModal;
+        window.closeReviewModal = closeReviewModal;
+        window.setRating = setRating;
+        window.handleReviewSubmit = handleReviewSubmit;
+        window.openDetailModal = openDetailModal;
+        window.goToDirections = goToDirections;
+        window.closeDetailModal = closeDetailModal;
+        window.closeReviewReportModal = closeReviewReportModal;
+    </script>
+</body>
+</html>
