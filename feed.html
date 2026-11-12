@@ -114,14 +114,17 @@
     <!-- MODULE SCRIPT -->
     <script type="module">
         import { getCurrentUser, fetchSpots, reportItem, deleteItem } from './js/supabase.js?v=6';
+        import { getDirectionsUrl } from './js/directions.js';
 
         let currentUser = null;
+        let currentProfile = null;
         let currentReportSpotId = null;
 
         async function init() {
             try {
-                const { user } = await getCurrentUser();
+                const { user, profile } = await getCurrentUser();
                 currentUser = user;
+                currentProfile = profile;
             } catch (e) {
                 console.error("Auth init error:", e);
             }
@@ -265,6 +268,10 @@
 
                 <div class="flex items-center gap-2 px-4 pb-4 pt-1 border-t border-palette-cream">
                     <a href="index.html?spotId=${spot.id}" class="flex-1 text-center text-xs font-bold text-palette-matcha border border-palette-cream rounded-lg py-2 hover:bg-palette-tofu transition">Xem trên Bản Đồ</a>
+                    ${(() => {
+                        const dirUrl = getDirectionsUrl(spot, currentProfile?.badge);
+                        return dirUrl ? `<a href="${dirUrl}" target="_blank" rel="noopener" class="flex-1 text-center text-xs font-bold text-white bg-palette-ember-600 rounded-lg py-2 hover:bg-palette-ember-700 transition"><i class="fa-solid fa-diamond-turn-right"></i> Chỉ Đường</a>` : "";
+                    })()}
                     <button type="button" class="report-btn flex-1 text-xs font-bold text-palette-yolk border border-palette-yolk/30 rounded-lg py-2 hover:bg-palette-yolk/10 transition" data-spot-id="${spot.id}">Báo Cáo</button>
                     ${canDelete ? `<button type="button" class="delete-btn text-xs font-bold text-palette-ember border border-palette-ember/30 rounded-lg py-2 px-3 hover:bg-palette-ember/10 transition" data-spot-id="${spot.id}">Xóa Bài</button>` : ""}
                 </div>
