@@ -114,7 +114,7 @@
     <!-- MODULE SCRIPT -->
     <script type="module">
         import { getCurrentUser, fetchSpots, reportItem, deleteItem } from './js/supabase.js?v=6';
-        import { getDirectionsUrl } from './js/directions.js';
+        import { openDirections } from './js/directions.js';
 
         let currentUser = null;
         let currentProfile = null;
@@ -268,10 +268,7 @@
 
                 <div class="flex items-center gap-2 px-4 pb-4 pt-1 border-t border-palette-cream">
                     <a href="index.html?spotId=${spot.id}" class="flex-1 text-center text-xs font-bold text-palette-matcha border border-palette-cream rounded-lg py-2 hover:bg-palette-tofu transition">Xem trên Bản Đồ</a>
-                    ${(() => {
-                        const dirUrl = getDirectionsUrl(spot, currentProfile?.badge);
-                        return dirUrl ? `<a href="${dirUrl}" target="_blank" rel="noopener" class="flex-1 text-center text-xs font-bold text-white bg-palette-ember-600 rounded-lg py-2 hover:bg-palette-ember-700 transition"><i class="fa-solid fa-diamond-turn-right"></i> Chỉ Đường</a>` : "";
-                    })()}
+                    <button type="button" class="directions-btn flex-1 text-xs font-bold text-white bg-palette-ember-600 rounded-lg py-2 hover:bg-palette-ember-700 transition" data-lat="${spot.lat ?? ""}" data-lng="${spot.lng ?? ""}" data-address="${escapeHtml(spot.address || "")}"><i class="fa-solid fa-diamond-turn-right"></i> Chỉ Đường</button>
                     <button type="button" class="report-btn flex-1 text-xs font-bold text-palette-yolk border border-palette-yolk/30 rounded-lg py-2 hover:bg-palette-yolk/10 transition" data-spot-id="${spot.id}">Báo Cáo</button>
                     ${canDelete ? `<button type="button" class="delete-btn text-xs font-bold text-palette-ember border border-palette-ember/30 rounded-lg py-2 px-3 hover:bg-palette-ember/10 transition" data-spot-id="${spot.id}">Xóa Bài</button>` : ""}
                 </div>
@@ -287,6 +284,14 @@
 
             document.querySelectorAll(".delete-btn").forEach((btn) => {
                 btn.addEventListener("click", () => handleDeleteSpot(btn.dataset.spotId));
+            });
+
+            document.querySelectorAll(".directions-btn").forEach((btn) => {
+                btn.addEventListener("click", () => {
+                    const lat = btn.dataset.lat ? parseFloat(btn.dataset.lat) : null;
+                    const lng = btn.dataset.lng ? parseFloat(btn.dataset.lng) : null;
+                    openDirections({ lat, lng, address: btn.dataset.address }, currentProfile?.badge);
+                });
             });
         }
 
