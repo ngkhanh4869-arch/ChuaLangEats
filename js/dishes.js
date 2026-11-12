@@ -157,5 +157,170 @@ export const DISHES = [
         priceText: "25.000 – 45.000 VNĐ",
         keywords: ["gà rán"],
         image: "https://static1.squarespace.com/static/5fee116050339566e9b38f09/5fee11df5abd827cad1a68c9/67c79935e60afb37c9886499/1741360470879/Screenshot+2025-03-04+at+7.25.58+PM.png?format=1500w"
+    },
+
+    // --- Added from a sweep of 4 Chùa Láng food blogs (emdoi.vn, digifood.vn,
+    // mytour.vn, greensm.com) that surfaced dishes/eateries not yet covered
+    // above. Image URLs below are best-effort hotlinks — the UI already
+    // falls back gracefully if one breaks, but it's worth spot-checking them.
+    {
+        id: "thit-xien-nuong",
+        name: "Thịt Xiên Nướng",
+        description: "Xiên thịt heo/gà tẩm ướp nướng than hoa, ăn kèm nộm bò đu đủ hoặc bánh mì — món vỉa hè quen thuộc buổi tối.",
+        category: "Ăn Vặt",
+        mealTypes: ["dinner", "snack"],
+        priceText: "15.000 – 60.000 VNĐ",
+        keywords: ["thịt xiên nướng", "xiên nướng"],
+        image: "https://commons.wikimedia.org/wiki/Special:FilePath/Pork_skewers_on_the_grill_-_Banh_Uot_hawker.jpg"
+    },
+    {
+        id: "bun-do",
+        name: "Bún Đỏ",
+        description: "Đặc sản Buôn Ma Thuột hiếm gặp ở Hà Nội: sợi bún dày màu cam đỏ từ dầu điều, ăn cùng chả cua, giò, nem rán, trứng cút.",
+        category: "Cơm/Bún/Phở",
+        mealTypes: ["lunch", "dinner"],
+        priceText: "35.000 – 45.000 VNĐ",
+        keywords: ["bún đỏ"],
+        image: "https://static.vinwonders.com/production/bun-do-buon-ma-thuot-1.jpg"
+    },
+    {
+        id: "tao-pho",
+        name: "Tào Phớ (Tàu Hũ)",
+        description: "Óc đậu mềm mịn chan nước đường gừng hoặc nước cốt dừa — món giải nhiệt nhẹ nhàng, rẻ tiền.",
+        category: "Bánh/Tráng Miệng",
+        mealTypes: ["snack"],
+        priceText: "10.000 – 25.000 VNĐ",
+        keywords: ["tào phớ", "tàu hũ"],
+        image: "https://static.vinwonders.com/production/tao-pho-ha-noi-1.jpg"
+    },
+    {
+        id: "pad-thai",
+        name: "Pad Thái",
+        description: "Mì gạo xào kiểu Thái với tôm/gà, trứng, giá đỗ và nước sốt me chua ngọt, rắc đậu phộng rang.",
+        category: "Khác",
+        mealTypes: ["lunch", "dinner"],
+        priceText: "60.000 – 120.000 VNĐ",
+        keywords: ["pad thái", "pad thai"],
+        image: "https://commons.wikimedia.org/wiki/Special:FilePath/Pad_Thai_with_tofu.jpg"
+    },
+    {
+        id: "kimmari",
+        name: "Kimmari",
+        description: "Chả giò rong biển chiên giòn kiểu Hàn Quốc, cuộn miến bên trong, chấm tương ớt ngọt.",
+        category: "Ăn Vặt",
+        mealTypes: ["snack", "dinner"],
+        priceText: "25.000 – 45.000 VNĐ",
+        keywords: ["kimmari"],
+        image: "https://static.vinwonders.com/production/kimmari-ha-noi.jpg"
+    },
+    {
+        id: "banh-trang-nuong",
+        name: "Bánh Tráng Nướng",
+        description: "\"Pizza Việt Nam\": bánh tráng nướng than hoa với trứng cút, hành phi, mỡ hành, pate hoặc xúc xích.",
+        category: "Ăn Vặt",
+        mealTypes: ["snack"],
+        priceText: "15.000 – 35.000 VNĐ",
+        keywords: ["bánh tráng nướng"],
+        image: "https://commons.wikimedia.org/wiki/Special:FilePath/B%C3%A1nh%20tr%C3%A1ng%20n%C6%B0%E1%BB%9Bng%20TP.%20H%E1%BB%93%20Ch%C3%AD%20Minh%20-%20street%20food%20in%20Ho%20Chi%20Minh%20City%2C%20Vietnam.jpg"
+    },
+    {
+        id: "banh-trang-tron",
+        name: "Bánh Tráng Trộn",
+        description: "Bánh tráng cắt sợi trộn xoài xanh, khô bò, trứng cút, rau răm, sa tế và nước sốt me — ăn vặt quốc dân.",
+        category: "Ăn Vặt",
+        mealTypes: ["snack"],
+        priceText: "15.000 – 30.000 VNĐ",
+        keywords: ["bánh tráng trộn"],
+        image: "https://static.vinwonders.com/production/banh-trang-tron-sai-gon.jpg"
+    },
+    {
+        id: "sup-cua",
+        name: "Súp Cua",
+        description: "Súp sánh mịn với thịt cua, trứng cút, nấm và trứng gà đánh tơi — món ăn vặt ấm bụng ngày se lạnh.",
+        category: "Ăn Vặt",
+        mealTypes: ["snack"],
+        priceText: "15.000 – 25.000 VNĐ",
+        keywords: ["súp cua"],
+        image: "https://static.vinwonders.com/production/sup-cua-ha-noi.jpg"
+    },
+    {
+        id: "nuoc-rau-ma",
+        name: "Nước Rau Má",
+        description: "Rau má xay nhuyễn lọc lấy nước, thường pha thêm đậu xanh hoặc sữa dừa — thức uống giải nhiệt quen thuộc.",
+        category: "Đồ Uống",
+        mealTypes: ["snack"],
+        priceText: "10.000 – 20.000 VNĐ",
+        keywords: ["rau má", "nước rau má"],
+        image: "https://static.vinwonders.com/production/nuoc-rau-ma.jpg"
+    },
+    {
+        id: "bun-mong-gio",
+        name: "Bún Móng Giò",
+        description: "Bún bung chân giò ninh mềm, nước dùng đậm đà nấu cùng dọc mùng hoặc hoa chuối.",
+        category: "Cơm/Bún/Phở",
+        mealTypes: ["lunch", "dinner"],
+        priceText: "30.000 – 50.000 VNĐ",
+        keywords: ["bún móng giò", "móng giò"],
+        image: "https://static.vinwonders.com/production/bun-moc-ha-noi.jpg"
+    },
+    {
+        id: "hotdog-chien",
+        name: "Hotdog Chiên Kiểu Hàn",
+        description: "Xúc xích bọc bột chiên xù hoặc bọc mì tôm, phô mai kéo sợi, lăn đường — món ăn vặt du nhập từ Hàn Quốc.",
+        category: "Ăn Vặt",
+        mealTypes: ["snack"],
+        priceText: "25.000 – 45.000 VNĐ",
+        keywords: ["hotdog", "hot dog"],
+        image: "https://static.vinwonders.com/production/corn-dog-han-quoc.jpg"
+    },
+    {
+        id: "ga-lac-pho-mai",
+        name: "Gà Lắc Phô Mai",
+        description: "Gà rán chiên giòn lắc cùng bột phô mai đậm vị, ăn kèm tương ớt mayonnaise.",
+        category: "Ăn Vặt",
+        mealTypes: ["snack"],
+        priceText: "20.000 – 40.000 VNĐ",
+        keywords: ["gà lắc phô mai"],
+        image: "https://static.vinwonders.com/production/ga-lac-pho-mai.jpg"
+    },
+    {
+        id: "bun-suon-chua",
+        name: "Bún Sườn Chua",
+        description: "Nước dùng chua dịu từ sấu hoặc me, sườn non ninh mềm, ăn cùng rau sống và bún.",
+        category: "Cơm/Bún/Phở",
+        mealTypes: ["lunch"],
+        priceText: "30.000 – 45.000 VNĐ",
+        keywords: ["bún sườn chua", "bún sườn"],
+        image: "https://static.vinwonders.com/production/bun-suon-ha-noi.jpg"
+    },
+    {
+        id: "chan-ga-sot-thai",
+        name: "Chân Gà Sốt Thái",
+        description: "Chân gà rút xương sốt chua cay kiểu Thái với sả, ớt, lá chanh — món nhậu vặt được ưa chuộng.",
+        category: "Ăn Vặt",
+        mealTypes: ["snack"],
+        priceText: "20.000 – 40.000 VNĐ",
+        keywords: ["chân gà sốt thái", "chân gà"],
+        image: "https://static.vinwonders.com/production/chan-ga-sot-thai.jpg"
+    },
+    {
+        id: "bun-mam-heo-quay",
+        name: "Bún Mắm Heo Quay",
+        description: "Nước dùng mắm cá đậm đà kiểu miền Tây, ăn cùng heo quay giòn bì và rau sống đa dạng.",
+        category: "Cơm/Bún/Phở",
+        mealTypes: ["lunch", "dinner"],
+        priceText: "30.000 – 50.000 VNĐ",
+        keywords: ["bún mắm heo quay", "bún mắm"],
+        image: "https://static.vinwonders.com/production/bun-mam-mien-tay.jpg"
+    },
+    {
+        id: "trung-chen-nuong",
+        name: "Trứng Chén Nướng",
+        description: "Trứng gà đánh cùng thịt băm, mộc nhĩ, hành lá, nướng trong chén nhỏ trên than hoa — ăn vặt lạ miệng.",
+        category: "Ăn Vặt",
+        mealTypes: ["snack"],
+        priceText: "10.000 – 20.000 VNĐ",
+        keywords: ["trứng chén nướng"],
+        image: "https://static.vinwonders.com/production/trung-nuong-cho.jpg"
     }
 ];
