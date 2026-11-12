@@ -432,6 +432,7 @@
     <!-- MAIN JAVASCRIPT APP LOGIC CONNECTED TO SUPABASE -->
     <script type="module">
         import { getCurrentUser, fetchSpots, fetchReviews, createReview, fetchMyReview, reportItem } from './js/supabase.js';
+        import { getDirectionsUrl } from './js/directions.js';
         import { DISHES } from './js/dishes.js';
 
         // STATE VARIABLES
@@ -916,12 +917,16 @@
 
                 const marker = L.marker([v.lat, v.lng]).addTo(map);
                 marker._chualangSpotId = v.id;
+                const dirUrl = getDirectionsUrl(v, currentProfile?.badge);
                 marker.bindPopup(`
                     <div class="text-xs p-1 font-sans">
                         <strong class="text-palette-ember-600 block text-sm">${escapeHtml(v.name)}</strong>
                         <div class="text-palette-matcha/70 font-bold">${escapeHtml(v.priceText)}</div>
                         <div class="text-palette-matcha/55 mt-1">${escapeHtml(v.address)}</div>
-                        <button onclick="openDetailModal(${v.id})" class="mt-2 bg-palette-ember-600 text-white font-bold px-2 py-1 rounded text-[10px] w-full">Xem đánh giá</button>
+                        <div class="flex gap-1 mt-2">
+                            <button onclick="openDetailModal(${v.id})" class="flex-1 bg-palette-ember-600 text-white font-bold px-2 py-1 rounded text-[10px]">Xem đánh giá</button>
+                            ${dirUrl ? `<a href="${dirUrl}" target="_blank" rel="noopener" class="flex-1 text-center bg-palette-matcha text-white font-bold px-2 py-1 rounded text-[10px]"><i class="fa-solid fa-diamond-turn-right"></i> Chỉ Đường</a>` : ""}
+                        </div>
                     </div>
                 `);
                 markers.push(marker);
@@ -1271,7 +1276,14 @@
                 </div>
 
                 <!-- Modal Footer -->
-                <div class="p-4 bg-palette-tofu border-t border-palette-cream flex justify-end">
+                <div class="p-4 bg-palette-tofu border-t border-palette-cream flex justify-end gap-2">
+                    ${(() => {
+                        const dirUrl = getDirectionsUrl(v, currentProfile?.badge);
+                        return dirUrl ? `
+                    <a href="${dirUrl}" target="_blank" rel="noopener" class="bg-palette-ember-600 hover:bg-palette-ember-700 text-white font-bold px-4 py-2 rounded-xl flex items-center gap-2">
+                        <i class="fa-solid fa-diamond-turn-right"></i> Dẫn Tôi Tới Đây
+                    </a>` : "";
+                    })()}
                     <button onclick="closeDetailModal()" class="bg-palette-cream hover:bg-palette-cream text-palette-matcha font-bold px-4 py-2 rounded-xl">
                         Đóng
                     </button>
